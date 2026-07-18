@@ -171,16 +171,16 @@ export default function EditorPage() {
   return (
     <div className="h-screen flex flex-col bg-background text-foreground font-sans">
       {/* Topbar */}
-      <div className="flex items-center justify-between flex-shrink-0 h-[48px] px-4 bg-background border-b border-border shadow-sm z-10">
-        <div className="flex items-center gap-2 text-sm">
+      <div className="flex items-center justify-between flex-shrink-0 h-[38px] px-4 bg-background border-b border-border shadow-sm z-10">
+        <div className="flex items-center gap-2 text-[13px]">
           <Link
             href="/"
             className="font-bold select-none mr-2 flex items-center"
             title="OpenScrim"
           >
             <svg
-              width="22"
-              height="22"
+              width="18"
+              height="18"
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
@@ -226,7 +226,7 @@ export default function EditorPage() {
           )}
           <button
             onClick={handleToggleRecording}
-            className={`flex items-center gap-2 px-5 py-1.5 rounded text-xs font-bold tracking-wider transition-colors cursor-pointer shadow-sm ${
+            className={`flex items-center gap-1.5 px-4 py-1 rounded text-[11px] font-bold tracking-wider transition-colors cursor-pointer shadow-sm ${
               isRecording
                 ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
                 : 'bg-primary hover:bg-primary/90 text-primary-foreground'
@@ -234,25 +234,25 @@ export default function EditorPage() {
           >
             {isRecording ? (
               <>
-                <FaStop className="text-[10px]" />
+                <FaStop className="text-[9px]" />
                 STOP
               </>
             ) : (
               <>
-                <FaPlay className="text-[10px]" />
+                <FaPlay className="text-[9px]" />
                 RUN
               </>
             )}
           </button>
-          <div className="w-px h-5 bg-border mx-1"></div>
+          <div className="w-px h-4 bg-border mx-1"></div>
           <button
             onClick={toggleSidebar}
-            className="flex items-center justify-center w-8 h-8 rounded hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors cursor-pointer"
+            className="flex items-center justify-center w-7 h-7 rounded hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors cursor-pointer"
             title="Toggle Explorer"
           >
             <svg
-              width="18"
-              height="18"
+              width="16"
+              height="16"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
