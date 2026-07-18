@@ -48,6 +48,16 @@ export default function Home() {
               Start Recording
             </Button>
 
+            <Link href="/editor" className="w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full sm:w-auto border-2 border-white/50 bg-transparent backdrop-blur-sm text-white hover:bg-white/10 hover:border-white/70 font-semibold px-6 sm:px-8 md:px-12 py-3 md:py-4 text-base md:text-lg shadow-lg transition-all duration-300 h-12 md:h-14 cursor-pointer"
+              >
+                Open Editor
+              </Button>
+            </Link>
+
             <Link href="/view" className="w-full sm:w-auto">
               <Button
                 variant="outline"
