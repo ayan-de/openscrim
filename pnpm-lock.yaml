@@ -36,6 +36,9 @@ importers:
       '@repo/openscrim-core':
         specifier: workspace:*
         version: link:../../packages/openscrim-core
+      '@repo/openscrim-monaco':
+        specifier: workspace:*
+        version: link:../../packages/openscrim-monaco
       '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -164,6 +167,22 @@ importers:
       '@types/node':
         specifier: ^22.15.3
         version: 22.15.3
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+
+  packages/openscrim-monaco:
+    dependencies:
+      '@repo/openscrim-core':
+        specifier: workspace:*
+        version: link:../openscrim-core
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      monaco-editor:
+        specifier: ^0.53.0
+        version: 0.53.0
       typescript:
         specifier: 5.9.2
         version: 5.9.2

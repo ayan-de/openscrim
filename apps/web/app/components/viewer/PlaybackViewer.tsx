@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
 import { PlaybackEngine, PlaybackState } from '@repo/openscrim-core';
@@ -8,8 +8,9 @@ import type {
   PlaybackPosition,
   PlaybackEventHandler,
   RecordingSession,
-  ContentChangeEvent,
 } from '@repo/openscrim-core';
+import { attachPlayback } from '@repo/openscrim-monaco';
+import type { PlaybackAttachment } from '@repo/openscrim-monaco';
 import { GitBranch } from 'lucide-react';
 import type { Fork, ViewerMode } from '@/lib/forkTypes';
 import {
@@ -56,95 +57,11 @@ export default function PlaybackViewer({
     null
   );
   const monacoRef = useRef<typeof monacoType | null>(null);
-  const sessionRef = useRef<RecordingSession | null>(session);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handlerRef = useRef<((data: any) => void) | null>(null);
+  const attachmentRef = useRef<PlaybackAttachment | null>(null);
 
   useEffect(() => {
-    sessionRef.current = session;
     activeForkIdRef.current = activeForkId;
-  }, [session, activeForkId]);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEventProcessed = useCallback((data: any) => {
-    if (!editorRef.current || !monacoRef.current) return;
-
-    const editor = editorRef.current;
-    const monaco = monacoRef.current;
-    const currentSession = sessionRef.current;
-
-    switch (data.type) {
-      case 'reset': {
-        const model = editor.getModel();
-        if (model) {
-          model.setValue(data.content);
-        }
-        setEditorContent(data.content);
-        if (data.language && currentSession) {
-          monaco.editor.setModelLanguage(editor.getModel()!, data.language);
-        }
-        break;
-      }
-
-      case 'contentChange': {
-        const contentEvent = data.event as ContentChangeEvent;
-        const model = editor.getModel();
-        if (model && contentEvent.changes) {
-          const edits = contentEvent.changes.map((change) => ({
-            range: new monaco.Range(
-              change.range.startLineNumber,
-              change.range.startColumn,
-              change.range.endLineNumber,
-              change.range.endColumn
-            ),
-            text: change.text,
-          }));
-          model.applyEdits(edits);
-          setEditorContent(model.getValue());
-        }
-        break;
-      }
-
-      case 'cursorPosition': {
-        const cursorEvent = data.event;
-        if (cursorEvent.position) {
-          editor.setPosition({
-            lineNumber: cursorEvent.position.lineNumber,
-            column: cursorEvent.position.column,
-          });
-        }
-        break;
-      }
-
-      case 'selectionChange': {
-        const selectionEvent = data.event;
-        if (selectionEvent.selection) {
-          editor.setSelection({
-            startLineNumber: selectionEvent.selection.selectionStartLineNumber,
-            startColumn: selectionEvent.selection.selectionStartColumn,
-            endLineNumber: selectionEvent.selection.positionLineNumber,
-            endColumn: selectionEvent.selection.positionColumn,
-          });
-        }
-        break;
-      }
-
-      case 'languageChange': {
-        const langEvent = data.event;
-        if (langEvent.language) {
-          const model = editor.getModel();
-          if (model) {
-            monaco.editor.setModelLanguage(model, langEvent.language);
-          }
-        }
-        break;
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    handlerRef.current = handleEventProcessed;
-  }, [handleEventProcessed]);
+  }, [activeForkId]);
 
   useEffect(() => {
     if (!engineRef.current) {
@@ -163,10 +80,6 @@ export default function PlaybackViewer({
           setPosition(data);
           break;
 
-        case 'eventProcessed':
-          handlerRef.current?.(data);
-          break;
-
         case 'error':
           console.error('Playback error:', data);
           break;
@@ -176,6 +89,8 @@ export default function PlaybackViewer({
     engine.addEventHandler(eventHandler);
 
     return () => {
+      attachmentRef.current?.detach();
+      attachmentRef.current = null;
       engine.removeEventHandler(eventHandler);
       engine.destroy();
     };
@@ -223,6 +138,13 @@ export default function PlaybackViewer({
     editorRef.current = editor;
     monacoRef.current = monaco;
     editor.updateOptions({ readOnly: true });
+
+    if (engineRef.current) {
+      attachmentRef.current?.detach();
+      attachmentRef.current = attachPlayback(editor, monaco, engineRef.current, {
+        onContentRendered: setEditorContent,
+      });
+    }
   };
 
   const handlePlay = () => {

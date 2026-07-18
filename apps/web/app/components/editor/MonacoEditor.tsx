@@ -38,7 +38,6 @@ export default function MonacoEditor({
     pauseRecording,
     resumeRecording,
     stopRecording,
-    handleEditorChange: recordingHandleEditorChange,
     handleEditorMount: recordingHandleEditorMount,
     formatDuration,
   } = useRecording({
@@ -65,12 +64,8 @@ export default function MonacoEditor({
     },
   });
 
-  const handleEditorChange = (
-    newValue: string | undefined,
-    event: monacoType.editor.IModelContentChangedEvent
-  ) => {
+  const handleEditorChange = (newValue: string | undefined) => {
     setValue(newValue || '');
-    recordingHandleEditorChange(newValue, event);
   };
 
   function handleEditorDidMount(

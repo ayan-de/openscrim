@@ -18,7 +18,7 @@ pnpm build                                # build everything
 pnpm lint                                 # eslint, --max-warnings 0
 pnpm check-types                          # tsc --noEmit in every package
 pnpm format                               # prettier on ts/tsx/md
-pnpm exec turbo <task> --filter=<pkg>     # single package; names: web, @repo/openscrim-core, @repo/ui, @repo/types
+pnpm exec turbo <task> --filter=<pkg>     # single package; names: web, @repo/openscrim-core, @repo/openscrim-monaco, @repo/ui, @repo/types
 ```
 
 There are no tests anywhere in the repo yet.
@@ -34,6 +34,10 @@ There are no tests anywhere in the repo yet.
 - `PlaybackEngine.ts` — schedules and replays events; emits to consumers via handler callbacks (Observer pattern).
 - `compression.ts` — `compressEvents`/`decompressEvents` (delta encoding, cursor dedup).
 - `format.ts` — the `.tantrica` file format: JSON + gzip with magic bytes; `sessionToTantricaFile`, `readTantricaBuffer`, etc.
+
+### packages/openscrim-monaco — the Monaco binding (no React, monaco-editor as type-only peer)
+
+The integration artifact for embedding OpenScrim in any Monaco host (this web app, rdamn, future editors). `MonacoRecorder` wires an editor instance to a `RecordingManager` (content/cursor/selection/keydown/language listeners; captures initial/final content across `start()`/`stop()`). `attachPlayback(editor, monaco, engine, { onContentRendered })` renders `PlaybackEngine` `eventProcessed` events into an editor; React hosts that mirror content into state must sync it via `onContentRendered` or their stale `value` prop will clobber applied edits. Like core, it resolves via compiled `dist/` — rebuild after editing.
 
 ### apps/web — Next.js 15 (App Router, React 19, Tailwind v4), frontend AND backend
 
