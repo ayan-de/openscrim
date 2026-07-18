@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
-import { Group, Panel, Separator } from 'react-resizable-panels';
 import { FaCircle, FaPlay, FaStop } from 'react-icons/fa';
 import { MonacoRecorder } from '@repo/openscrim-monaco';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,9 +40,11 @@ export default function EditorPage() {
   const [sideMenuSelectedTab] = useState<SideMenuTab>('explorer');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(true);
 
   const toggleSidebar = () => setIsSidebarOpen((open) => !open);
   const toggleTerminal = () => setIsTerminalOpen((open) => !open);
+  const togglePreview = () => setIsPreviewOpen((open) => !open);
 
   const [editorOptions, setEditorOptions] =
     useState<monacoType.editor.IStandaloneEditorConstructionOptions>({
@@ -290,6 +291,30 @@ export default function EditorPage() {
               <line x1="12" y1="19" x2="20" y2="19" />
             </svg>
           </button>
+          <button
+            onClick={togglePreview}
+            className={`flex items-center justify-center w-7 h-7 rounded hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
+              isPreviewOpen
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground'
+            }`}
+            title="Toggle Browser Preview"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -415,126 +440,128 @@ export default function EditorPage() {
           </div>
         </div>
 
-        <Group orientation="horizontal">
-          {/* Editor */}
-          <Panel defaultSize="50" minSize="20">
-            <div className="h-full flex flex-col bg-background">
-              {/* Minimal Tab */}
-              <div className="flex items-center justify-between px-4 py-2 bg-background border-b border-border flex-shrink-0">
-                <div className="flex items-center gap-2 text-sm text-foreground">
-                  {activeFile && (
-                    <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getMaterialFileIcon(
-                          activeFile.split('/').pop() ?? ''
-                        )}
-                        alt={activeFile}
-                        width={16}
-                        height={16}
-                        className="opacity-90"
-                      />
-                      <span className="font-semibold tracking-wide text-[13px]">
-                        {activeFile.split('/').pop()}
-                      </span>
-                      <button
-                        className="ml-2 text-muted-foreground hover:text-foreground opacity-60 hover:opacity-100 transition-opacity"
-                        title="Copy file path"
-                      >
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <rect
-                            x="9"
-                            y="9"
-                            width="13"
-                            height="13"
-                            rx="2"
-                            ry="2"
-                          ></rect>
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                        </svg>
-                      </button>
-                    </>
-                  )}
-                </div>
+        {/* Editor */}
+        <div className="flex-grow min-w-0">
+          <div className="h-full flex flex-col bg-background">
+            {/* Minimal Tab */}
+            <div className="flex items-center justify-between px-4 py-2 bg-background border-b border-border flex-shrink-0">
+              <div className="flex items-center gap-2 text-sm text-foreground">
                 {activeFile && (
-                  <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest opacity-60">
-                    CTRL+S TO SAVE
-                  </div>
-                )}
-              </div>
-
-              {/* Monaco */}
-              <div className="flex-grow min-h-0 bg-background">
-                {activeFile !== null ? (
-                  <Editor
-                    height="100%"
-                    path={activeFile}
-                    value={store.files[activeFile] ?? ''}
-                    onChange={(newValue) => {
-                      setStore((prev) =>
-                        updateFile(prev, activeFile, newValue ?? '')
-                      );
-                    }}
-                    onMount={handleEditorMount}
-                    theme="vs-dark"
-                    options={editorOptions}
-                    className="pt-2"
-                  />
-                ) : (
-                  <div className="w-full h-full flex flex-col justify-center items-center bg-background text-muted-foreground">
-                    <svg
-                      width="48"
-                      height="48"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="mb-4 opacity-50"
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getMaterialFileIcon(
+                        activeFile.split('/').pop() ?? ''
+                      )}
+                      alt={activeFile}
+                      width={16}
+                      height={16}
+                      className="opacity-90"
+                    />
+                    <span className="font-semibold tracking-wide text-[13px]">
+                      {activeFile.split('/').pop()}
+                    </span>
+                    <button
+                      className="ml-2 text-muted-foreground hover:text-foreground opacity-60 hover:opacity-100 transition-opacity"
+                      title="Copy file path"
                     >
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    <p className="text-sm font-medium tracking-wide">
-                      Select a file to start coding
-                    </p>
-                  </div>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="9"
+                          y="9"
+                          width="13"
+                          height="13"
+                          rx="2"
+                          ry="2"
+                        ></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                    </button>
+                  </>
                 )}
               </div>
-
-              {/* Terminal — CSS height animation for a smooth toggle */}
-              <div
-                className={`flex-shrink-0 overflow-hidden transition-[height] duration-300 ease-in-out ${
-                  isTerminalOpen ? 'h-48 border-t border-border' : 'h-0'
-                }`}
-              >
-                <div className="h-48">
-                  <TerminalPane />
+              {activeFile && (
+                <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest opacity-60">
+                  CTRL+S TO SAVE
                 </div>
+              )}
+            </div>
+
+            {/* Monaco */}
+            <div className="flex-grow min-h-0 bg-background">
+              {activeFile !== null ? (
+                <Editor
+                  height="100%"
+                  path={activeFile}
+                  value={store.files[activeFile] ?? ''}
+                  onChange={(newValue) => {
+                    setStore((prev) =>
+                      updateFile(prev, activeFile, newValue ?? '')
+                    );
+                  }}
+                  onMount={handleEditorMount}
+                  theme="vs-dark"
+                  options={editorOptions}
+                  className="pt-2"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col justify-center items-center bg-background text-muted-foreground">
+                  <svg
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="mb-4 opacity-50"
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  <p className="text-sm font-medium tracking-wide">
+                    Select a file to start coding
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Terminal — CSS height animation for a smooth toggle */}
+            <div
+              className={`flex-shrink-0 overflow-hidden transition-[height] duration-300 ease-in-out ${
+                isTerminalOpen ? 'h-48 border-t border-border' : 'h-0'
+              }`}
+            >
+              <div className="h-48">
+                <TerminalPane />
               </div>
             </div>
-          </Panel>
+          </div>
+        </div>
 
-          <Separator className="w-px bg-border" />
-
-          {/* Preview */}
-          <Panel defaultSize="30" minSize="15">
+        {/* Preview — CSS width animation for a smooth toggle */}
+        <div
+          className={`flex-shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out ${
+            isPreviewOpen ? 'w-[26rem] border-l border-border' : 'w-0'
+          }`}
+        >
+          <div className="w-[26rem] h-full">
             <PreviewBrowser store={store} />
-          </Panel>
-        </Group>
+          </div>
+        </div>
       </div>
     </div>
   );
