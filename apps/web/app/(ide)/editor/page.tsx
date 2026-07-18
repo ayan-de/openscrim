@@ -15,6 +15,7 @@ import { formatDuration } from '@/lib/formatDuration';
 import { getMaterialFileIcon } from 'file-extension-icon-js';
 import FileExplorer from '@/components/playground/FileExplorer';
 import PreviewBrowser from '@/components/playground/PreviewBrowser';
+import TerminalPane from '@/components/playground/TerminalPane';
 
 import {
   STARTER_FILES,
@@ -39,8 +40,10 @@ export default function EditorPage() {
   );
   const [sideMenuSelectedTab] = useState<SideMenuTab>('explorer');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
 
   const toggleSidebar = () => setIsSidebarOpen((open) => !open);
+  const toggleTerminal = () => setIsTerminalOpen((open) => !open);
 
   const [editorOptions, setEditorOptions] =
     useState<monacoType.editor.IStandaloneEditorConstructionOptions>({
@@ -262,6 +265,29 @@ export default function EditorPage() {
             >
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
               <line x1="9" y1="3" x2="9" y2="21" />
+            </svg>
+          </button>
+          <button
+            onClick={toggleTerminal}
+            className={`flex items-center justify-center w-7 h-7 rounded hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
+              isTerminalOpen
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground'
+            }`}
+            title="Toggle Terminal"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="4 17 10 11 4 5" />
+              <line x1="12" y1="19" x2="20" y2="19" />
             </svg>
           </button>
         </div>
@@ -487,6 +513,17 @@ export default function EditorPage() {
                     </p>
                   </div>
                 )}
+              </div>
+
+              {/* Terminal — CSS height animation for a smooth toggle */}
+              <div
+                className={`flex-shrink-0 overflow-hidden transition-[height] duration-300 ease-in-out ${
+                  isTerminalOpen ? 'h-48 border-t border-border' : 'h-0'
+                }`}
+              >
+                <div className="h-48">
+                  <TerminalPane />
+                </div>
               </div>
             </div>
           </Panel>
