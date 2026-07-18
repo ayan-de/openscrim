@@ -189,58 +189,7 @@ export default function EditorPage() {
     });
   };
 
-  const railTabs: Array<{ tab: SideMenuTab; title: string; icon: React.ReactNode }> = [
-    {
-      tab: 'explorer',
-      title: 'Explorer',
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-6 h-12"
-          viewBox="0 0 24 24"
-        >
-          <g fill="currentColor">
-            <path d="M17.5 0h-9L7 1.5V6H2.5L1 7.5v15.07L2.5 24h12.07L16 22.57V18h4.7l1.3-1.43V4.5L17.5 0zm0 2.12l2.38 2.38H17.5V2.12zm-3 20.38h-12v-15H7v9.07L8.5 18h6v4.5zm6-6h-12v-15H16V6h4.5v10.5z" />
-          </g>
-        </svg>
-      ),
-    },
-    {
-      tab: 'about',
-      title: 'About',
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-6 h-12"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      ),
-    },
-    {
-      tab: 'settings',
-      title: 'Settings',
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-6 h-12"
-          viewBox="0 0 16 16"
-        >
-          <g fill="currentColor">
-            <path d="M9.1 4.4L8.6 2H7.4l-.5 2.4l-.7.3l-2-1.3l-.9.8l1.3 2l-.2.7l-2.4.5v1.2l2.4.5l.3.8l-1.3 2l.8.8l2-1.3l.8.3l.4 2.3h1.2l.5-2.4l.8-.3l2 1.3l.8-.8l-1.3-2l.3-.8l2.3-.4V7.4l-2.4-.5l-.3-.8l1.3-2l-.8-.8l-2 1.3l-.7-.2zM9.4 1l.5 2.4L12 2.1l2 2l-1.4 2.1l2.4.4v2.8l-2.4.5L14 12l-2 2l-2.1-1.4l-.5 2.4H6.6l-.5-2.4L4 13.9l-2-2l1.4-2.1L1 9.4V6.6l2.4-.5L2.1 4l2-2l2.1 1.4l.4-2.4h2.8zm.6 7c0 1.1-.9 2-2 2s-2-.9-2-2s.9-2 2-2s2 .9 2 2zM8 9c.6 0 1-.4 1-1s-.4-1-1-1s-1 .4-1 1s.4 1 1 1z" />
-          </g>
-        </svg>
-      ),
-    },
-  ];
+
 
   return (
     <div className="h-screen flex flex-col bg-[#131313] text-white">
@@ -295,23 +244,7 @@ export default function EditorPage() {
       </div>
 
       <div className="flex flex-row flex-grow min-h-0">
-      {/* Icon rail */}
-      <div className="bg-[#252525] flex flex-col pr-0.5 flex-grow-0 flex-shrink-0 basis-[50px]">
-        {railTabs.map(({ tab, title, icon }) => (
-          <div
-            key={tab}
-            title={title}
-            className={`mb-1 flex justify-center items-center border-l-[3px] border-solid cursor-pointer ${
-              sideMenuSelectedTab === tab && !isSideMenuCollapsed
-                ? 'border-white'
-                : 'border-[#252525] text-[#979797]'
-            }`}
-            onClick={() => handleSideMenuTab(tab)}
-          >
-            {icon}
-          </div>
-        ))}
-      </div>
+
 
       <Group orientation="horizontal">
         {/* Side menu */}
