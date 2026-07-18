@@ -1,9 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
 import { Group, Panel, Separator } from 'react-resizable-panels';
+import { FaCircle, FaPlay, FaStop } from 'react-icons/fa';
+import { MonacoRecorder } from '@repo/openscrim-monaco';
+import { useAuth } from '@/hooks/useAuth';
+import { useLoading } from '@/context/LoadingContext';
+import { getRecordingStorage } from '@/lib/storage';
+import { formatDuration } from '@/lib/formatDuration';
 
 import { getMaterialFileIcon } from 'file-extension-icon-js';
 import FileExplorer from '@/components/playground/FileExplorer';
@@ -45,6 +52,69 @@ export default function EditorPage() {
       fontSize: 14,
       tabSize: 4,
     });
+
+  const recorderRef = useRef<MonacoRecorder | null>(null);
+  const recIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recDuration, setRecDuration] = useState(0);
+
+  const { isAuthenticated } = useAuth();
+  const { showSuccess, showError } = useLoading();
+  const storage = getRecordingStorage(() => isAuthenticated);
+
+  useEffect(() => {
+    return () => {
+      if (recIntervalRef.current) clearInterval(recIntervalRef.current);
+      recorderRef.current?.dispose();
+    };
+  }, []);
+
+  const handleEditorMount = (
+    editor: monacoType.editor.IStandaloneCodeEditor,
+    monaco: typeof monacoType
+  ) => {
+    recorderRef.current?.dispose();
+    recorderRef.current = new MonacoRecorder(editor, monaco);
+  };
+
+  const handleToggleRecording = async () => {
+    const recorder = recorderRef.current;
+    if (!recorder) {
+      showError('Open a file first — the editor is not ready yet');
+      return;
+    }
+
+    if (!isRecording) {
+      const fileName = activeFile?.split('/').pop() ?? 'untitled';
+      recorder.start(`Editor session — ${fileName}`);
+      setIsRecording(true);
+      recIntervalRef.current = setInterval(() => {
+        setRecDuration(recorder.getCurrentDuration());
+      }, 100);
+      return;
+    }
+
+    if (recIntervalRef.current) {
+      clearInterval(recIntervalRef.current);
+      recIntervalRef.current = null;
+    }
+    setIsRecording(false);
+    setRecDuration(0);
+
+    const session = recorder.stop();
+    if (session) {
+      try {
+        await storage.save(session);
+        window.dispatchEvent(new CustomEvent('recording_saved'));
+        showSuccess(
+          `Recording saved! Duration: ${formatDuration(session.duration, 'timer')}, Events: ${session.events.length}`
+        );
+      } catch (err) {
+        console.error('Failed to save recording:', err);
+        showError('Failed to save recording');
+      }
+    }
+  };
 
   const tree = buildTree(store);
 
@@ -173,7 +243,58 @@ export default function EditorPage() {
   ];
 
   return (
-    <div className="h-screen flex flex-row bg-[#131313] text-white">
+    <div className="h-screen flex flex-col bg-[#131313] text-white">
+      {/* Topbar */}
+      <div className="flex items-center justify-between flex-shrink-0 h-[42px] px-3 bg-[#252525] border-b border-[#3b3b3b]">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="font-bold text-sm select-none">
+            Open<span className="text-[#ff0000]">Scrim</span>
+          </Link>
+          {activeFile && (
+            <span className="text-xs text-white/40 hidden sm:inline">
+              {displayPath(activeFile)}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          {isRecording && (
+            <span className="flex items-center gap-2 text-xs font-mono text-white/80 mr-1">
+              <FaCircle className="text-[#ff0000] text-[8px] animate-pulse" />
+              {formatDuration(recDuration, 'timer')}
+            </span>
+          )}
+          <button
+            onClick={handleToggleRecording}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium transition-colors cursor-pointer ${
+              isRecording
+                ? 'bg-[#ff0000] hover:bg-[#d90000] text-white'
+                : 'bg-[#3b3b3b] hover:bg-[#4a4a4a] text-white'
+            }`}
+          >
+            {isRecording ? (
+              <>
+                <FaStop className="text-xs" />
+                Stop
+              </>
+            ) : (
+              <>
+                <FaCircle className="text-xs text-[#ff0000]" />
+                Record
+              </>
+            )}
+          </button>
+          <Link
+            href="/view"
+            className="flex items-center gap-2 px-4 py-1.5 rounded text-sm font-medium bg-[#3b3b3b] hover:bg-[#4a4a4a] text-white transition-colors"
+          >
+            <FaPlay className="text-xs" />
+            View
+          </Link>
+        </div>
+      </div>
+
+      <div className="flex flex-row flex-grow min-h-0">
       {/* Icon rail */}
       <div className="bg-[#252525] flex flex-col pr-0.5 flex-grow-0 flex-shrink-0 basis-[50px]">
         {railTabs.map(({ tab, title, icon }) => (
@@ -390,6 +511,7 @@ export default function EditorPage() {
                           updateFile(prev, activeFile, newValue ?? '')
                         );
                       }}
+                      onMount={handleEditorMount}
                       theme="vs-dark"
                       options={editorOptions}
                     />
@@ -422,6 +544,7 @@ export default function EditorPage() {
           <PreviewBrowser store={store} />
         </Panel>
       </Group>
+      </div>
     </div>
   );
 }
