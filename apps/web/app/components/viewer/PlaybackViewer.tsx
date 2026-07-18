@@ -141,9 +141,14 @@ export default function PlaybackViewer({
 
     if (engineRef.current) {
       attachmentRef.current?.detach();
-      attachmentRef.current = attachPlayback(editor, monaco, engineRef.current, {
-        onContentRendered: setEditorContent,
-      });
+      attachmentRef.current = attachPlayback(
+        editor,
+        monaco,
+        engineRef.current,
+        {
+          onContentRendered: setEditorContent,
+        }
+      );
     }
   };
 

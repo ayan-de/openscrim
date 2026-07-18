@@ -37,7 +37,15 @@ function CallbackContent() {
     if (!isAuthenticated) {
       router.push('/');
     }
-  }, [user, isLoading, isAuthenticated, errorParam, showError, showSuccess, router]);
+  }, [
+    user,
+    isLoading,
+    isAuthenticated,
+    errorParam,
+    showError,
+    showSuccess,
+    router,
+  ]);
 
   return null;
 }

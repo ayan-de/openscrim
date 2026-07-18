@@ -98,7 +98,7 @@ export default function FileExplorer({
             setRenaming(null);
           }
         }}
-        className="w-full bg-[#3c3c3c] border border-[#007fd4] text-white text-sm px-1 py-0.5 outline-none"
+        className="w-full bg-input border border-ring text-foreground text-sm px-1 py-0.5 outline-none rounded-sm"
       />
     </div>
   );
@@ -120,8 +120,8 @@ export default function FileExplorer({
       return (
         <div key={node.path}>
           <div
-            className="py-1 flex flex-row items-center cursor-pointer hover:bg-[#2a2d2e]"
-            style={{ paddingLeft: `${depth * 12}px` }}
+            className="py-1 mx-2 mb-0.5 rounded-md flex flex-row items-center cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground transition-colors"
+            style={{ paddingLeft: `${depth * 12 - 8}px` }}
             onClick={() => onToggleDir(node.path)}
             onContextMenu={(e) => {
               e.preventDefault();
@@ -174,10 +174,12 @@ export default function FileExplorer({
     return (
       <div
         key={node.path}
-        className={`py-1 flex flex-row items-center cursor-pointer ${
-          activeFile === node.path ? 'bg-[#37373d]' : 'hover:bg-[#2a2d2e]'
+        className={`py-1 mx-2 mb-0.5 rounded-md flex flex-row items-center cursor-pointer transition-colors ${
+          activeFile === node.path
+            ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm'
+            : 'hover:bg-sidebar-accent/50 text-sidebar-foreground/80 hover:text-sidebar-foreground'
         }`}
-        style={{ paddingLeft: `${depth * 12 + 4}px` }}
+        style={{ paddingLeft: `${depth * 12 - 4}px` }}
         onClick={() => onOpenFile(node.path)}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -202,9 +204,11 @@ export default function FileExplorer({
   };
 
   return (
-    <div className="flex flex-col h-full select-none overflow-x-clip text-white">
-      <div className="bg-[#252525] text-xs px-2 pb-2 pt-3 shadow z-40 sticky flex items-center top-0 left-0">
-        <div className="flex-grow font-bold uppercase">Explorer</div>
+    <div className="flex flex-col h-full select-none overflow-x-clip bg-sidebar text-sidebar-foreground">
+      <div className="text-xs px-4 pb-2 pt-4 sticky flex items-center top-0 left-0">
+        <div className="flex-grow font-semibold uppercase tracking-wider text-[11px] opacity-70">
+          Files
+        </div>
         <button
           title="New File"
           className="flex items-center justify-center mx-1 cursor-pointer text-base opacity-80 hover:opacity-100"
@@ -254,7 +258,9 @@ export default function FileExplorer({
       <div className="text-sm flex-grow overflow-y-auto">
         {pendingInput && pendingInput.dirPath === CODE_ROOT && (
           <NameInput
-            defaultValue={pendingInput.type === 'file' ? 'newfile.js' : 'folder'}
+            defaultValue={
+              pendingInput.type === 'file' ? 'newfile.js' : 'folder'
+            }
             onSubmit={submitInput}
             depth={1}
           />
@@ -262,16 +268,42 @@ export default function FileExplorer({
         {tree.children.map((child) => renderNode(child, 1))}
       </div>
 
+      <div className="text-xs px-4 py-3 mt-4 border-t border-sidebar-border sticky flex items-center bottom-0 left-0 bg-sidebar">
+        <div className="flex-grow font-semibold uppercase tracking-wider text-[11px] opacity-70">
+          Dependencies
+        </div>
+        <button
+          title="Add Dependency"
+          className="flex items-center justify-center cursor-pointer text-base opacity-70 hover:opacity-100 transition-opacity"
+        >
+          <svg
+            stroke="currentColor"
+            fill="currentColor"
+            strokeWidth="0"
+            viewBox="0 0 16 16"
+            height="1em"
+            width="1em"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M8 1.5a.5.5 0 01.5.5v5.5H14a.5.5 0 010 1H8.5V14a.5.5 0 01-1 0V8.5H2a.5.5 0 010-1h5.5V2a.5.5 0 01.5-.5z"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
       {contextMenu && (
         <div
-          className="fixed z-50 bg-[#252526] border border-[#454545] rounded shadow-xl py-1 text-sm min-w-[160px]"
+          className="fixed z-50 bg-popover text-popover-foreground border border-border rounded-md shadow-md py-1 text-sm min-w-[160px]"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
           {contextMenu.node.type === 'directory' && (
             <>
               <button
-                className="w-full text-left px-4 py-1.5 hover:bg-[#094771] cursor-pointer"
+                className="w-full text-left px-4 py-1.5 hover:bg-accent hover:text-accent-foreground cursor-pointer"
                 onClick={() => {
                   onToggleDir(contextMenu.node.path);
                   setPendingInput({
@@ -284,7 +316,7 @@ export default function FileExplorer({
                 New File
               </button>
               <button
-                className="w-full text-left px-4 py-1.5 hover:bg-[#094771] cursor-pointer"
+                className="w-full text-left px-4 py-1.5 hover:bg-accent hover:text-accent-foreground cursor-pointer"
                 onClick={() => {
                   setPendingInput({
                     dirPath: contextMenu.node.path,
@@ -295,11 +327,11 @@ export default function FileExplorer({
               >
                 New Folder
               </button>
-              <div className="border-t border-[#454545] my-1" />
+              <div className="border-t border-border my-1" />
             </>
           )}
           <button
-            className="w-full text-left px-4 py-1.5 hover:bg-[#094771] cursor-pointer"
+            className="w-full text-left px-4 py-1.5 hover:bg-accent hover:text-accent-foreground cursor-pointer"
             onClick={() => {
               setRenaming(contextMenu.node.path);
               setContextMenu(null);
@@ -308,7 +340,7 @@ export default function FileExplorer({
             Rename
           </button>
           <button
-            className="w-full text-left px-4 py-1.5 hover:bg-[#094771] cursor-pointer text-red-400"
+            className="w-full text-left px-4 py-1.5 hover:bg-destructive hover:text-destructive-foreground cursor-pointer text-destructive"
             onClick={() => {
               onDelete(contextMenu.node.path);
               setContextMenu(null);
@@ -320,8 +352,8 @@ export default function FileExplorer({
       )}
 
       {pendingInput && pendingInput.dirPath !== CODE_ROOT && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-[#252526] border border-[#454545] rounded-lg p-4 w-80">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="bg-card text-card-foreground border border-border rounded-lg p-4 w-80 shadow-lg">
             <p className="text-sm mb-2">
               New {pendingInput.type} in{' '}
               <code className="text-xs opacity-70">

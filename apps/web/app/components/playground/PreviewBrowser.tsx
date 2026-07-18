@@ -47,12 +47,12 @@ export default function PreviewBrowser({ store }: PreviewBrowserProps) {
   }, [store]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-[#131313]">
-      <div className="flex items-center gap-2 px-2 py-1.5 bg-[#252525] border-b border-[#3b3b3b]">
+    <div className="w-full h-full flex flex-col bg-background">
+      <div className="flex items-center gap-2 px-3 py-2 bg-sidebar border-b border-border">
         <button
           title="Refresh Preview"
           onClick={() => setRefreshKey((k) => k + 1)}
-          className="text-white/70 hover:text-white p-1 cursor-pointer"
+          className="text-sidebar-foreground/70 hover:text-sidebar-foreground p-1 cursor-pointer transition-colors rounded-sm hover:bg-sidebar-accent"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -69,8 +69,10 @@ export default function PreviewBrowser({ store }: PreviewBrowserProps) {
             />
           </svg>
         </button>
-        <div className="flex-grow bg-[#131313] text-white/50 text-xs rounded px-3 py-1 select-none">
-          playground://preview/index.html
+        <div className="flex-grow bg-background text-muted-foreground text-xs rounded px-3 py-1 select-none border border-border shadow-sm flex items-center justify-center">
+          <span className="opacity-80 font-mono tracking-wide">
+            playground://preview/index.html
+          </span>
         </div>
       </div>
       <iframe
