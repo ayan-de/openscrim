@@ -3,8 +3,31 @@
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useCallback } from 'react';
 import type { User } from '../types/auth';
+import { env } from '../config/env';
 
-export function useAuth() {
+interface AuthResult {
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  initiateGoogleLogin: () => Promise<void>;
+  logout: () => Promise<void>;
+}
+
+const localOnlyAuth: AuthResult = {
+  user: null,
+  isLoading: false,
+  isAuthenticated: false,
+  initiateGoogleLogin: async () => {
+    console.warn('Auth is disabled (NEXT_PUBLIC_LOCAL_ONLY=true)');
+  },
+  logout: async () => {},
+};
+
+function useLocalOnlyAuth(): AuthResult {
+  return localOnlyAuth;
+}
+
+function useSessionAuth(): AuthResult {
   const { data: session, status } = useSession();
   const isLoading = status === 'loading';
   const isAuthenticated = status === 'authenticated';
@@ -37,3 +60,5 @@ export function useAuth() {
     logout,
   };
 }
+
+export const useAuth = env.LOCAL_ONLY ? useLocalOnlyAuth : useSessionAuth;

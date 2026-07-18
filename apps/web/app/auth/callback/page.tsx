@@ -2,19 +2,19 @@
 
 import { useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '../../hooks/useAuth';
 import { useLoading } from '../../context/LoadingContext';
 
 function CallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const { showSuccess, showError } = useLoading();
 
   const errorParam = searchParams.get('error');
 
   useEffect(() => {
-    if (status === 'loading') return;
+    if (isLoading) return;
 
     if (errorParam) {
       const errorMessage =
@@ -26,7 +26,7 @@ function CallbackContent() {
       return;
     }
 
-    if (session?.user) {
+    if (user) {
       showSuccess('You have been signed in successfully!');
       setTimeout(() => {
         window.location.href = '/';
@@ -34,10 +34,10 @@ function CallbackContent() {
       return;
     }
 
-    if (status === 'unauthenticated') {
+    if (!isAuthenticated) {
       router.push('/');
     }
-  }, [session, status, errorParam, showError, showSuccess, router]);
+  }, [user, isLoading, isAuthenticated, errorParam, showError, showSuccess, router]);
 
   return null;
 }

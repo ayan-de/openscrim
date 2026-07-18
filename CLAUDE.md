@@ -58,4 +58,4 @@ Path alias `@/*` → `apps/web/app/*`. Route groups:
 
 ## Environment
 
-No `.env.example` exists. Required for a working app: `MONGODB_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET`. Optional `NEXT_PUBLIC_*` flags (max recording duration, autosave, debug) are centralized in `app/config/env.ts` — read client env through that module, not `process.env` directly.
+No `.env.example` exists. Required for a working app: `MONGODB_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET` — unless `NEXT_PUBLIC_LOCAL_ONLY=true` is set (see `apps/web/.env.local`), which detaches the backend entirely for frontend development: `AuthProvider` skips NextAuth's `SessionProvider`, `useAuth` returns a permanent signed-out state, and `SmartStorageAdapter` therefore stays pure IndexedDB. The flag is inlined at build time, so restart the dev server after changing it. Optional `NEXT_PUBLIC_*` flags (max recording duration, autosave, debug) are centralized in `app/config/env.ts` — read client env through that module, not `process.env` directly.

@@ -1,200 +1,61 @@
-# AGENTS.md — OpenScrim
+# CLAUDE.md
 
-This file provides guidance for agentic coding agents working in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Repository Overview
+## What this is
 
-A pnpm monorepo (Turborepo) with two apps and three shared packages:
+OpenScrim records coding sessions in a Monaco editor (keystrokes, cursor moves, content changes as timestamped events) and plays them back like a video, with seek, speed control, and the ability to "fork" a playback at any point into an editable session. Pnpm (v9) + Turborepo monorepo. The project was previously named **Tantrica** — that name still appears in the `.tantrica` file format, `docs/`, and some identifiers.
 
-- **`apps/web`** — Next.js 15 frontend (React 19, Tailwind CSS v4, Monaco Editor, App Router)
-- **`apps/api`** — NestJS 10 backend API (Google OAuth, Express session auth)
-- **`packages/ui`** — Shared React component library (`@repo/ui`)
-- **`packages/eslint-config`** — Shared ESLint flat configs (`@repo/eslint-config`)
-- **`packages/typescript-config`** — Shared tsconfig bases (`@repo/typescript-config`)
+Note: `AGENTS.md` is stale — it references a NestJS `apps/api` that was removed when the backend was migrated into Next.js API routes (commit `92fa465`). Trust this file and the code over `AGENTS.md`.
 
-Package manager: **pnpm** (v9). Node >= 18. TypeScript 5.9.
-
-## Build / Dev / Lint / Test Commands
-
-All commands are run from the repository root unless noted.
-
-### Install dependencies
+## Commands
 
 ```bash
 pnpm install
+pnpm dev                                  # all apps (turbo)
+pnpm exec turbo dev --filter=web          # just the web app (port 3000)
+pnpm build                                # build everything
+pnpm lint                                 # eslint, --max-warnings 0
+pnpm check-types                          # tsc --noEmit in every package
+pnpm format                               # prettier on ts/tsx/md
+pnpm exec turbo <task> --filter=<pkg>     # single package; names: web, @repo/openscrim-core, @repo/ui, @repo/types
 ```
 
-### Dev (all apps)
+There are no tests anywhere in the repo yet.
 
-```bash
-pnpm dev
-# or: pnpm exec turbo dev
-```
+`@repo/openscrim-core` resolves via its compiled `dist/` (not source), so after editing `packages/openscrim-core/src/` run `pnpm exec turbo build --filter=@repo/openscrim-core` (or full `pnpm build`) for the web app to pick up changes. Turbo's `dependsOn: ^build` handles this ordering in full builds, but `dev` does not rebuild core.
 
-### Dev a single app
+## Architecture
 
-```bash
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=@repo/api
-```
+### packages/openscrim-core — the domain engine (framework-agnostic, no React)
 
-### Build (all)
+- `types.ts` — the event model everything is built on: `RecordingEvent` union (keystroke, cursor_position, selection_change, content_change, focus/blur, language_change, recording control) and `RecordingSession`.
+- `RecordingManager.ts` — captures editor events into a session buffer.
+- `PlaybackEngine.ts` — schedules and replays events; emits to consumers via handler callbacks (Observer pattern).
+- `compression.ts` — `compressEvents`/`decompressEvents` (delta encoding, cursor dedup).
+- `format.ts` — the `.tantrica` file format: JSON + gzip with magic bytes; `sessionToTantricaFile`, `readTantricaBuffer`, etc.
 
-```bash
-pnpm build
-```
+### apps/web — Next.js 15 (App Router, React 19, Tailwind v4), frontend AND backend
 
-### Build a single package/app
+Path alias `@/*` → `apps/web/app/*`. Route groups:
 
-```bash
-pnpm exec turbo build --filter=web
-pnpm exec turbo build --filter=@repo/api
-```
+- `(main)` — landing, `/dashboard` (recording library), `/upload` (.tantrica upload)
+- `(studio)` — `/record` (recording studio) and `/view` (playback + fork UI)
+- `/r/[id]` — public share/player page
+- `api/` — the backend (migrated from a former NestJS app):
+  - `api/auth/[...nextauth]` — NextAuth v5 (beta) with Google provider. `lib/auth.ts` upserts users into MongoDB on sign-in and copies Mongo `_id` + profile fields into the JWT/session. Session augmentation types live in `app/types/next-auth.d.ts`.
+  - `api/recordings/...` — CRUD, `upload`, `[id]/download`, `[id]/events` (paginated) + `events/all`, `[id]/play`, `public`. Routes follow a consistent pattern: `auth()` guard → `connectToDatabase()` → call functions from `lib/recordingsService.ts` → JSON envelope `{ status, code, message, data }`.
 
-### Lint (all)
+### Persistence — two layers, don't confuse them
 
-```bash
-pnpm lint
-```
+- **Server (MongoDB via Mongoose)**: `lib/mongodb.ts` (cached connection, needs `MONGODB_URI`), models in `lib/models/`: `User`, `Recording` (metadata), `RecordingEventBatch` (events chunked into batches keyed by `recordingId` + `sequenceIndex`).
+- **Client (IndexedDB)**: `lib/storage/` implements the `RecordingStorage` interface with three adapters — `IndexedDBStorageAdapter` (local), `ApiStorageAdapter` (HTTP), and `SmartStorageAdapter`, which the app uses: always saves locally, mirrors to the API when authenticated, and falls back local↔API on reads. Anonymous users get fully local recording.
+- **Forks** (`lib/forkStorage.ts`, `lib/forkTypes.ts`) are IndexedDB-only: a `Fork` snapshots content/language/cursor at a playback timestamp and is auto-saved as the user edits.
 
-### Lint a single package
+### Client state
 
-```bash
-pnpm exec turbo lint --filter=web
-pnpm exec turbo lint --filter=@repo/ui
-```
+`context/AuthProvider.tsx` + `hooks/useAuth.ts` wrap the NextAuth session; `hooks/useRecordings.ts` is the main hook orchestrating RecordingManager/storage; `components/viewer/PlaybackViewer.tsx` and `components/editor/MonacoEditor.tsx` are the two big components driving playback and capture.
 
-### Type-check (all)
+## Environment
 
-```bash
-pnpm check-types
-```
-
-### Type-check a single package
-
-```bash
-pnpm exec turbo check-types --filter=web
-```
-
-### Format
-
-```bash
-pnpm format
-```
-
-### Tests (API only — NestJS/Jest)
-
-```bash
-# All tests
-pnpm exec turbo test --filter=@repo/api
-
-# Single test file (run from apps/api)
-cd apps/api && pnpm exec jest src/auth/auth.service.spec.ts
-
-# Watch mode
-cd apps/api && pnpm exec jest --watch
-
-# E2E tests
-cd apps/api && pnpm exec jest --config ./test/jest-e2e.json
-
-# Coverage
-cd apps/api && pnpm exec jest --coverage
-```
-
-The web app has no test runner configured. Test files in the API use the `.spec.ts` suffix.
-
-## Code Style Guidelines
-
-### Formatting (Prettier)
-
-- Single quotes
-- Semicolons always
-- Trailing commas: ES5
-- Print width: 80
-- Tab width: 2 spaces (no tabs)
-- Format on save is enabled via `.vscode/settings.json`
-
-### TypeScript
-
-**Web app** (`apps/web`): strict mode enabled (via `@repo/typescript-config/nextjs.json` which extends `base.json` with `strict: true`, `noUncheckedIndexedAccess: true`).
-
-**API app** (`apps/api`): less strict — `strictNullChecks: false`, `noImplicitAny: false`. Uses `experimentalDecorators` and `emitDecoratorMetadata` for NestJS decorators. CommonJS modules (`module: "commonjs"`).
-
-**Shared packages**: follow the base tsconfig (`strict: true`, `noUncheckedIndexedAccess: true`, `ES2022` target).
-
-Use `type` imports for types: `import type { Foo } from 'bar'` when only types are imported.
-
-### Imports
-
-- Web app uses `@/*` path alias mapping to `./app/*` (configured in `apps/web/tsconfig.json`).
-  - Example: `import { RecordingManager } from '@/core/RecordingManager'`
-  - Example: `import { env } from '@/config/env'`
-  - Example: `import { useRecording } from '@/hooks/useRecordings'`
-- Shared packages use `@repo/ui`, `@repo/eslint-config/*`, `@repo/typescript-config/*`.
-- API uses relative imports (NestJS convention).
-- Group imports: framework/external first, then internal packages, then local aliases. Separate groups with a blank line.
-
-### React / Next.js Conventions
-
-- App Router (`apps/web/app/`) with route groups: `(main)`, `(studio)`, `auth`.
-- Client components must start with `'use client'` directive.
-- Components use default exports for pages (`export default function PageName()`).
-- Shared UI components use named exports (`export const Button = ...`).
-- Use `interface` for component props (not `type`).
-- React hooks follow the `use*` naming pattern (e.g., `useRecording`, `useUser`).
-- Context providers follow the `*Provider` naming pattern (e.g., `UserProvider`).
-- Use `cn()` utility from `@/lib/utils` for conditional Tailwind class merging (clsx + tailwind-merge).
-
-### Tailwind CSS
-
-- Tailwind v4 with PostCSS plugin (`@tailwindcss/postcss`).
-- Use Tailwind utility classes directly in JSX. Avoid inline styles unless dynamic.
-- Use `class-variance-authority` for component variants (shadcn/ui pattern).
-- Fonts configured via CSS variables (`--font-poppins`, `--font-geist-mono`).
-
-### NestJS API Conventions
-
-- Follow NestJS module structure: `*.module.ts`, `*.controller.ts`, `*.service.ts`.
-- Use decorators: `@Injectable()`, `@Controller()`, etc.
-- Define interfaces in the same file as the service that uses them (co-located).
-- Use `ConfigService` for environment variable access (not `process.env` directly).
-- API runs on port 5000.
-
-### Naming Conventions
-
-- **Files**: PascalCase for components (`MonacoEditor.tsx`, `PlaygroundCard.tsx`), camelCase for utilities/hooks (`useRecordings.ts`, `env.ts`).
-- **Directories**: camelCase (`components/`, `infrastructure/`) or kebab-case.
-- **Classes**: PascalCase (`RecordingManager`, `AuthService`).
-- **Interfaces**: PascalCase without `I` prefix (`User`, `RecordingSession`, `ButtonProps`).
-- **Enums**: PascalCase names, UPPER_SNAKE_CASE or camelCase values (`RecordingEventType.KEYSTROKE`).
-- **Constants**: UPPER_SNAKE_CASE (`DEFAULT_RECORDING_CONFIG`, `USER_STORAGE_KEY`).
-- **Functions**: camelCase (`formatDuration`, `handleEditorChange`).
-
-### Error Handling
-
-- Throw `Error` objects with descriptive messages.
-- Use try/catch with typed catch: `catch (error: any)` then `error.message`.
-- Prefer early returns / guard clauses.
-- In React contexts/hooks, catch errors and log via `console.error` rather than letting them propagate to the UI.
-
-### Environment Variables
-
-- Frontend env vars use the `NEXT_PUBLIC_` prefix.
-- Access via the centralized `env` config object (`apps/web/app/config/env.ts`), not `process.env` directly.
-- API uses `ConfigService` from `@nestjs/config`.
-
-### Key Libraries
-
-- **Monaco Editor** (`@monaco-editor/react`) — in-browser code editor
-- **Radix UI** — headless UI primitives (dialog, slot)
-- **Lucide React** — icons
-- **ogl** — lightweight WebGL library
-- **uuid** (`v4`) — unique ID generation
-- **class-variance-authority** + **clsx** + **tailwind-merge** — component styling
-
-### General Rules
-
-- Do not add comments unless requested.
-- Always run `pnpm lint` and `pnpm check-types` after making changes and fix any errors.
-- Use `pnpm format` to auto-format before committing.
-- The ESLint config converts all rules to warnings (via `eslint-plugin-only-warn`), but `--max-warnings 0` is used in the web lint script, so treat all warnings as errors.
+No `.env.example` exists. Required for a working app: `MONGODB_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_SECRET` — unless `NEXT_PUBLIC_LOCAL_ONLY=true` is set (see `apps/web/.env.local`), which detaches the backend entirely for frontend development: `AuthProvider` skips NextAuth's `SessionProvider`, `useAuth` returns a permanent signed-out state, and `SmartStorageAdapter` therefore stays pure IndexedDB. The flag is inlined at build time, so restart the dev server after changing it. Optional `NEXT_PUBLIC_*` flags (max recording duration, autosave, debug) are centralized in `app/config/env.ts` — read client env through that module, not `process.env` directly.

@@ -10,6 +10,10 @@ export const env = {
     Number(process.env.NEXT_PUBLIC_MAX_RECORDING_DURATION) || 300000,
   AUTO_SAVE_RECORDINGS: process.env.NEXT_PUBLIC_AUTO_SAVE_RECORDINGS === 'true',
 
+  // Detaches the backend entirely: no session fetch, auth always off,
+  // storage stays in IndexedDB. For frontend/DOM development.
+  LOCAL_ONLY: process.env.NEXT_PUBLIC_LOCAL_ONLY === 'true',
+
   DEBUG_RECORDING: process.env.NEXT_PUBLIC_DEBUG_RECORDING === 'true',
   DEBUG_MONACO: process.env.NEXT_PUBLIC_DEBUG_MONACO === 'true',
 
