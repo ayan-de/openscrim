@@ -33,11 +33,13 @@ import {
 } from '@/lib/forkStorage';
 import {
   CODE_ROOT,
+  buildTree,
   displayPath,
   languageForPath,
   updateFile,
 } from '@/components/playground/fileStore';
 import type { PlaygroundFiles } from '@/components/playground/fileStore';
+import FileTree from '@/components/playground/FileTree';
 import FloatingPreviewWindow from '@/components/playground/FloatingPreviewWindow';
 
 interface PlaygroundPlayerProps {
@@ -225,6 +227,16 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
     }
     return paths;
   }, [session]);
+
+  // Directory tree of every project file, mirroring the editor's explorer
+  const fileTree = useMemo(
+    () =>
+      buildTree({
+        files: Object.fromEntries(recordedFiles.map((p) => [p, ''])),
+        dirs: [CODE_ROOT],
+      }),
+    [recordedFiles]
+  );
 
   const firstEventTime = session?.events[0]?.timestamp ?? 0;
 
@@ -575,38 +587,16 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
                 : 'Loading recording…'}
             </p>
           ) : (
-            <div className="text-sm">
-              {recordedFiles.map((path) => {
-                const name = path.split('/').pop() ?? path;
-                return (
-                  <div
-                    key={path}
-                    onClick={() => handleSelectFile(path)}
-                    title={
-                      isForking
-                        ? `${displayPath(path)} — open in fork`
-                        : `${displayPath(path)} — jump to first appearance`
-                    }
-                    className={`py-1 mx-2 mb-0.5 px-2 rounded-md flex flex-row items-center gap-1.5 transition-colors cursor-pointer hover:bg-sidebar-accent/50 ${
-                      activeFile === path
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm'
-                        : 'text-sidebar-foreground/80'
-                    }`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getMaterialFileIcon(name)}
-                      alt={name}
-                      width={18}
-                      height={18}
-                    />
-                    <p className="flex-grow overflow-hidden select-none text-ellipsis opacity-80">
-                      {name}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+            <FileTree
+              tree={fileTree}
+              activeFile={activeFile}
+              onSelectFile={handleSelectFile}
+              fileTitle={(path) =>
+                isForking
+                  ? `${displayPath(path)} — open in fork`
+                  : `${displayPath(path)} — jump to first appearance`
+              }
+            />
           )}
         </div>
 
