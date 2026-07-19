@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
 import { getMaterialFileIcon } from 'file-extension-icon-js';
-import { GitBranch, Pause, Play, RotateCcw, X } from 'lucide-react';
+import { GitBranch, Globe, Pause, Play, RotateCcw, X } from 'lucide-react';
 import {
   PlaybackEngine,
   PlaybackState,
@@ -31,7 +31,14 @@ import {
   getForks,
   updateForkEdits,
 } from '@/lib/forkStorage';
-import { displayPath } from '@/components/playground/fileStore';
+import {
+  CODE_ROOT,
+  displayPath,
+  languageForPath,
+  updateFile,
+} from '@/components/playground/fileStore';
+import type { PlaygroundFiles } from '@/components/playground/fileStore';
+import FloatingPreviewWindow from '@/components/playground/FloatingPreviewWindow';
 
 interface PlaygroundPlayerProps {
   sessionId: string;
@@ -70,10 +77,22 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
   const [activeForkId, setActiveForkId] = useState<string | null>(null);
   const [showForkList, setShowForkList] = useState(false);
 
+  // Live file contents reconstructed from playback (and fork edits),
+  // feeding the browser preview window.
+  const [playFiles, setPlayFiles] = useState<PlaygroundFiles>({
+    files: {},
+    dirs: [CODE_ROOT],
+  });
+  const [isPreviewOpen, setIsPreviewOpen] = useState(true);
+  const activeFileRef = useRef<string | null>(null);
+  const playAreaRef = useRef<HTMLDivElement>(null);
+
   const engineRef = useRef<PlaybackEngine | null>(null);
   const editorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(
     null
   );
+  const monacoRef = useRef<typeof monacoType | null>(null);
+  const playFilesRef = useRef<PlaygroundFiles>({ files: {}, dirs: [] });
   const attachmentRef = useRef<PlaybackAttachment | null>(null);
   const activeForkIdRef = useRef<string | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,6 +103,10 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
   useEffect(() => {
     activeForkIdRef.current = activeForkId;
   }, [activeForkId]);
+
+  useEffect(() => {
+    playFilesRef.current = playFiles;
+  }, [playFiles]);
 
   const ensureEngine = useCallback((): PlaybackEngine => {
     if (!engineRef.current) {
@@ -107,10 +130,15 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
         case 'eventProcessed':
           if (data.type === 'fileChange') {
             const event = data.event as FileChangeEvent;
+            activeFileRef.current = event.path;
             setActiveFile(event.path);
             setSeenFiles((prev) =>
               prev.includes(event.path) ? prev : [...prev, event.path]
             );
+            if (event.content !== undefined) {
+              const content = event.content;
+              setPlayFiles((prev) => updateFile(prev, event.path, content));
+            }
           }
           break;
         case 'error':
@@ -192,9 +220,16 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
     monaco: typeof monacoType
   ) => {
     editorRef.current = editor;
+    monacoRef.current = monaco;
     editor.updateOptions({ readOnly: true });
     attachmentRef.current?.detach();
-    attachmentRef.current = attachPlayback(editor, monaco, ensureEngine());
+    attachmentRef.current = attachPlayback(editor, monaco, ensureEngine(), {
+      // Mirror every rendered edit into the preview's file store
+      onContentRendered: (content) => {
+        const path = activeFileRef.current;
+        if (path) setPlayFiles((prev) => updateFile(prev, path, content));
+      },
+    });
   };
 
   const handleTogglePlay = () => {
@@ -217,9 +252,37 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
     ensureEngine().setSpeed(newSpeed);
   };
 
-  /** Sidebar/tab click — jump to where the recording first shows this file. */
-  const handleSeekToFile = (path: string) => {
-    if (!session || isForking) return;
+  /** Latest known content for a file: live store first, else its first recorded snapshot. */
+  const contentForFile = (path: string): string => {
+    const known = playFilesRef.current.files[path];
+    if (known !== undefined) return known;
+    const first = session?.events.find(
+      (e) =>
+        e.type === RecordingEventType.FILE_CHANGE &&
+        (e as FileChangeEvent).path === path
+    ) as FileChangeEvent | undefined;
+    return first?.content ?? '';
+  };
+
+  /**
+   * Sidebar/tab click. Playback: seek to where the recording first shows the
+   * file. Forking: switch the editor to that file so it can be edited too.
+   */
+  const handleSelectFile = (path: string) => {
+    if (!session) return;
+
+    if (isForking) {
+      const editor = editorRef.current;
+      const model = editor?.getModel();
+      if (!editor || !model || path === activeFileRef.current) return;
+      activeFileRef.current = path;
+      setActiveFile(path);
+      setSeenFiles((prev) => (prev.includes(path) ? prev : [...prev, path]));
+      model.setValue(contentForFile(path));
+      monacoRef.current?.editor.setModelLanguage(model, languageForPath(path));
+      return;
+    }
+
     const first = session.events.find(
       (e) =>
         e.type === RecordingEventType.FILE_CHANGE &&
@@ -246,6 +309,8 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
         cursor: cursorPos
           ? { lineNumber: cursorPos.lineNumber, column: cursorPos.column }
           : { lineNumber: 1, column: 1 },
+        files: { ...playFilesRef.current.files },
+        activePath: activeFileRef.current ?? undefined,
       });
       setForks((prev) =>
         [...prev, fork].sort((a, b) => a.timestamp - b.timestamp)
@@ -266,6 +331,14 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
 
     const editor = editorRef.current;
     const disposable = editor.onDidChangeModelContent(() => {
+      // Live-update the preview with the fork user's edits
+      const path = activeFileRef.current;
+      const model = editor.getModel();
+      if (path && model) {
+        const content = model.getValue();
+        setPlayFiles((prev) => updateFile(prev, path, content));
+      }
+
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = setTimeout(() => {
         const forkId = activeForkIdRef.current;
@@ -277,7 +350,11 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
           model.getValue(),
           cursorPos
             ? { lineNumber: cursorPos.lineNumber, column: cursorPos.column }
-            : { lineNumber: 1, column: 1 }
+            : { lineNumber: 1, column: 1 },
+          {
+            files: { ...playFilesRef.current.files },
+            activePath: activeFileRef.current ?? undefined,
+          }
         ).catch(console.error);
       }, 2000);
     });
@@ -301,7 +378,11 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
             model.getValue(),
             cursorPos
               ? { lineNumber: cursorPos.lineNumber, column: cursorPos.column }
-              : { lineNumber: 1, column: 1 }
+              : { lineNumber: 1, column: 1 },
+            {
+              files: { ...playFilesRef.current.files },
+              activePath: activeFileRef.current ?? undefined,
+            }
           );
         } catch (error) {
           console.error('Failed to save fork edits:', error);
@@ -334,7 +415,33 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
     setActiveForkId(latest.id);
     activeForkIdRef.current = latest.id;
     setMode('fork');
-    editor.getModel()?.setValue(latest.edits);
+
+    // Restore the fork's whole file set into the live store (and preview)
+    if (latest.files) {
+      const files = latest.files;
+      setPlayFiles((prev) => ({
+        ...prev,
+        files: { ...prev.files, ...files },
+      }));
+    }
+    const path = latest.activePath ?? activeFileRef.current;
+    if (path) {
+      activeFileRef.current = path;
+      setActiveFile(path);
+      setSeenFiles((prev) => (prev.includes(path) ? prev : [...prev, path]));
+    }
+
+    const model = editor.getModel();
+    if (model) {
+      const content = path ? (latest.files?.[path] ?? latest.edits) : latest.edits;
+      model.setValue(content);
+      if (path) {
+        monacoRef.current?.editor.setModelLanguage(
+          model,
+          languageForPath(path)
+        );
+      }
+    }
     editor.setPosition({
       lineNumber: latest.cursor.lineNumber,
       column: latest.cursor.column,
@@ -416,17 +523,33 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
           </span>
         </div>
 
-        <Link
-          href="/editor"
-          className="flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-bold tracking-wider text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          title="Exit playback"
-        >
-          <X size={13} />
-          EXIT
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsPreviewOpen((v) => !v)}
+            className={`flex items-center justify-center w-7 h-7 rounded hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
+              isPreviewOpen
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground'
+            }`}
+            title="Toggle Browser Preview"
+          >
+            <Globe size={16} />
+          </button>
+          <Link
+            href="/editor"
+            className="flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-bold tracking-wider text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            title="Exit playback"
+          >
+            <X size={13} />
+            EXIT
+          </Link>
+        </div>
       </div>
 
-      <div className="relative flex flex-row flex-grow min-h-0 bg-background">
+      <div
+        ref={playAreaRef}
+        className="relative flex flex-row flex-grow min-h-0 bg-background"
+      >
         {/* Read-only file sidebar built from the recording's file events */}
         <div className="flex-shrink-0 w-64 border-r border-border bg-sidebar text-sidebar-foreground overflow-y-auto">
           <div className="text-xs px-4 pb-2 pt-4 font-semibold uppercase tracking-wider text-[11px] opacity-70">
@@ -445,13 +568,13 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
                 return (
                   <div
                     key={path}
-                    onClick={() => handleSeekToFile(path)}
-                    title={`${displayPath(path)} — jump to first appearance`}
-                    className={`py-1 mx-2 mb-0.5 px-2 rounded-md flex flex-row items-center gap-1.5 transition-colors ${
+                    onClick={() => handleSelectFile(path)}
+                    title={
                       isForking
-                        ? 'opacity-50'
-                        : 'cursor-pointer hover:bg-sidebar-accent/50'
-                    } ${
+                        ? `${displayPath(path)} — open in fork`
+                        : `${displayPath(path)} — jump to first appearance`
+                    }
+                    className={`py-1 mx-2 mb-0.5 px-2 rounded-md flex flex-row items-center gap-1.5 transition-colors cursor-pointer hover:bg-sidebar-accent/50 ${
                       activeFile === path
                         ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-sm'
                         : 'text-sidebar-foreground/80'
@@ -486,11 +609,9 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
                 return (
                   <div
                     key={path}
-                    onClick={() => handleSeekToFile(path)}
+                    onClick={() => handleSelectFile(path)}
                     title={displayPath(path)}
-                    className={`flex items-center gap-2 px-3 py-2 text-sm border-r border-border select-none whitespace-nowrap transition-colors ${
-                      isForking ? '' : 'cursor-pointer'
-                    } ${
+                    className={`flex items-center gap-2 px-3 py-2 text-sm border-r border-border select-none whitespace-nowrap transition-colors cursor-pointer ${
                       isActive
                         ? 'bg-background text-foreground shadow-[inset_0_-2px_0_0] shadow-primary'
                         : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
@@ -559,6 +680,14 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
             />
           </div>
         </div>
+
+        {/* Browser preview — live output of the played-back (or forked) code */}
+        <FloatingPreviewWindow
+          store={playFiles}
+          open={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+          containerRef={playAreaRef}
+        />
 
         {/* Floating video-style control bar */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[min(760px,92%)] z-40">
