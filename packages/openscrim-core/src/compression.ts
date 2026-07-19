@@ -64,18 +64,8 @@ export function compressEvents(events: RecordingEvent[]): RecordingEvent[] {
       continue;
     }
 
-    if (event.type === 'content_change') {
-      const batch = takeWhile(
-        events,
-        i,
-        (e) => e.type === 'content_change',
-        50
-      );
-      result.push(batch[batch.length - 1]!);
-      i += batch.length;
-      continue;
-    }
-
+    // content_change events are deltas, not snapshots — every one must be
+    // kept or the replayed document diverges from what was typed.
     result.push(event);
     i++;
   }

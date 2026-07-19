@@ -46,6 +46,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "lint": "echo 'No lint configured'",
+    "test": "vitest run",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
@@ -55,7 +56,8 @@
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
     "tsup": "^8.5.0",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=18"
