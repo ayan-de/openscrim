@@ -22,6 +22,7 @@ export enum RecordingEventType {
   CURSOR_POSITION = 'cursor_position',
   SELECTION_CHANGE = 'selection_change',
   CONTENT_CHANGE = 'content_change',
+  FILE_CHANGE = 'file_change',
   EDITOR_FOCUS = 'editor_focus',
   EDITOR_BLUR = 'editor_blur',
   LANGUAGE_CHANGE = 'language_change',
@@ -74,6 +75,20 @@ export interface ContentChangeEvent extends BaseRecordingEvent {
   isUndoing: boolean;
 }
 
+/**
+ * The editor switched to a different file (e.g. the host swapped the model).
+ * `content` snapshots the file as it was at switch time so playback can
+ * restore it without replaying the whole session.
+ */
+export interface FileChangeEvent extends BaseRecordingEvent {
+  type: RecordingEventType.FILE_CHANGE;
+  /** Path of the file now active in the editor */
+  path: string;
+  previousPath?: string;
+  content?: string;
+  language?: string;
+}
+
 export interface EditorFocusEvent extends BaseRecordingEvent {
   type: RecordingEventType.EDITOR_FOCUS;
 }
@@ -101,6 +116,7 @@ export type RecordingEvent =
   | CursorPositionEvent
   | SelectionChangeEvent
   | ContentChangeEvent
+  | FileChangeEvent
   | EditorFocusEvent
   | EditorBlurEvent
   | LanguageChangeEvent
@@ -148,6 +164,7 @@ export interface RecordingConfig {
   captureCursorMovement: boolean;
   captureSelections: boolean;
   captureContentChanges: boolean;
+  captureFileChanges: boolean;
   captureEditorEvents: boolean;
   debounceDelay: number;
   compressionEnabled: boolean;
@@ -159,6 +176,7 @@ export const DEFAULT_RECORDING_CONFIG: RecordingConfig = {
   captureCursorMovement: true,
   captureSelections: true,
   captureContentChanges: true,
+  captureFileChanges: true,
   captureEditorEvents: true,
   debounceDelay: 50,
   compressionEnabled: true,

@@ -3,6 +3,7 @@ import {
   RecordingEventType,
   RecordingSession,
   ContentChangeEvent,
+  FileChangeEvent,
   CursorPositionEvent,
   SelectionChangeEvent,
   KeystrokeEvent,
@@ -402,6 +403,21 @@ export class PlaybackEngine {
               language: this.currentLanguage,
             });
           }
+          break;
+        }
+
+        case RecordingEventType.FILE_CHANGE: {
+          const fileEvent = event as FileChangeEvent;
+          if (fileEvent.content !== undefined) {
+            this.currentContent = fileEvent.content;
+          }
+          if (fileEvent.language) {
+            this.currentLanguage = fileEvent.language;
+          }
+          this.emit('eventProcessed', {
+            type: 'fileChange',
+            event: fileEvent,
+          });
           break;
         }
 

@@ -7,6 +7,7 @@ export type {
   CursorPositionEvent,
   SelectionChangeEvent,
   ContentChangeEvent,
+  FileChangeEvent,
   EditorFocusEvent,
   EditorBlurEvent,
   LanguageChangeEvent,
