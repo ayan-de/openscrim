@@ -1,6 +1,6 @@
 {
   "name": "@thisisayande/openscrim-monaco",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Monaco editor binding for OpenScrim — record and replay interactive, forkable code screencasts in any Monaco host",
   "keywords": [
     "monaco",

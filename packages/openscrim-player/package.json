@@ -1,6 +1,6 @@
 {
   "name": "@thisisayande/openscrim-player",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Drop-in player for OpenScrim interactive code screencasts — one script tag or one function call, no Monaco setup required",
   "keywords": [
     "scrimba",
