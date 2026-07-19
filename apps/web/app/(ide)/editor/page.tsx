@@ -1,18 +1,21 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
-import { FaCircle, FaStop } from 'react-icons/fa';
+import { FaCircle, FaPlay, FaStop } from 'react-icons/fa';
 import { MonacoRecorder } from '@repo/openscrim-monaco';
 import { useAuth } from '@/hooks/useAuth';
 import { useLoading } from '@/context/LoadingContext';
 import { getRecordingStorage } from '@/lib/storage';
 import { formatDuration } from '@/lib/formatDuration';
+import type { RecordingSession } from '@repo/openscrim-core';
 
 import { getMaterialFileIcon } from 'file-extension-icon-js';
 import FileExplorer from '@/components/playground/FileExplorer';
+import PlaygroundPlayer from '@/components/playground/PlaygroundPlayer';
 import PreviewBrowser from '@/components/playground/PreviewBrowser';
 import TerminalPane from '@/components/playground/TerminalPane';
 
@@ -31,6 +34,21 @@ import type { PlaygroundFiles } from '@/components/playground/fileStore';
 type SideMenuTab = 'about' | 'explorer' | 'settings';
 
 export default function EditorPage() {
+  return (
+    <Suspense>
+      <EditorPageContent />
+    </Suspense>
+  );
+}
+
+function EditorPageContent() {
+  // ?play=<recordingId> swaps the playground for the playback view
+  const playId = useSearchParams().get('play');
+  if (playId) return <PlaygroundPlayer sessionId={playId} />;
+  return <PlaygroundEditor />;
+}
+
+function PlaygroundEditor() {
   const [store, setStore] = useState<PlaygroundFiles>(STARTER_FILES);
   const [openDirs, setOpenDirs] = useState<Set<string>>(new Set([CODE_ROOT]));
   const [openFiles, setOpenFiles] = useState<string[]>([
@@ -161,6 +179,12 @@ export default function EditorPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [recDuration, setRecDuration] = useState(0);
 
+  // "Plays" dropdown — saved recordings, playable via /editor?play=<id>
+  const [showPlays, setShowPlays] = useState(false);
+  const [plays, setPlays] = useState<RecordingSession[]>([]);
+  const [playsLoading, setPlaysLoading] = useState(false);
+  const playsRef = useRef<HTMLDivElement>(null);
+
   const { isAuthenticated } = useAuth();
   const { showSuccess, showError } = useLoading();
   const storage = getRecordingStorage(() => isAuthenticated);
@@ -171,6 +195,31 @@ export default function EditorPage() {
       recorderRef.current?.dispose();
     };
   }, []);
+
+  // Fetch the recording list fresh each time the dropdown opens
+  useEffect(() => {
+    if (!showPlays) return;
+
+    setPlaysLoading(true);
+    getRecordingStorage(() => isAuthenticated)
+      .list(1, 50)
+      .then((result) => {
+        setPlays(
+          [...result.recordings].sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+        );
+      })
+      .catch((err) => console.error('Failed to load recordings:', err))
+      .finally(() => setPlaysLoading(false));
+
+    const close = (e: MouseEvent) => {
+      if (!playsRef.current?.contains(e.target as Node)) setShowPlays(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showPlays, isAuthenticated]);
 
   const handleEditorMount = (
     editor: monacoType.editor.IStandaloneCodeEditor,
@@ -343,6 +392,66 @@ export default function EditorPage() {
               {formatDuration(recDuration, 'timer')}
             </span>
           )}
+          <div className="relative" ref={playsRef}>
+            <button
+              onClick={() => setShowPlays((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-bold tracking-wider transition-colors cursor-pointer ${
+                showPlays
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              title="Play a saved recording"
+            >
+              <FaPlay className="text-[9px]" />
+              PLAYS
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {showPlays && (
+              <div className="absolute top-full mt-2 right-0 w-80 bg-popover text-popover-foreground border border-border rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+                {playsLoading ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    Loading recordings…
+                  </div>
+                ) : plays.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    No recordings yet — hit RECORD to make one
+                  </div>
+                ) : (
+                  plays.map((play) => (
+                    <Link
+                      key={play.id}
+                      href={`/editor?play=${play.id}`}
+                      onClick={() => setShowPlays(false)}
+                      className="flex items-center justify-between gap-3 px-3 py-2 hover:bg-accent/50 border-b border-border last:border-b-0 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {play.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDuration(play.duration, 'timer')} •{' '}
+                          {new Date(play.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <FaPlay className="text-[10px] text-primary flex-shrink-0" />
+                    </Link>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           <button
             onClick={handleToggleRecording}
             title={isRecording ? 'Stop recording' : 'Start recording'}
