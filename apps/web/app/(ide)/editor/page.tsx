@@ -18,6 +18,7 @@ import FileExplorer from '@/components/playground/FileExplorer';
 import FloatingPreviewWindow from '@/components/playground/FloatingPreviewWindow';
 import PlaygroundPlayer from '@/components/playground/PlaygroundPlayer';
 import TerminalPane from '@/components/playground/TerminalPane';
+import PlaygroundModal from '@/components/playgroundCards/PlaygroundModal';
 
 import {
   buildTree,
@@ -97,6 +98,7 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
   const filesAtRecordStartRef = useRef<Record<string, string>>({});
   const [isRecording, setIsRecording] = useState(false);
   const [recDuration, setRecDuration] = useState(0);
+  const [showTitleModal, setShowTitleModal] = useState(false);
 
   // "Plays" dropdown — saved recordings, playable via /editor?play=<id>
   const [showPlays, setShowPlays] = useState(false);
@@ -148,6 +150,20 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
     recorderRef.current = new MonacoRecorder(editor, monaco);
   };
 
+  const startRecording = (title: string) => {
+    const recorder = recorderRef.current;
+    if (!recorder) {
+      showError('Open a file first — the editor is not ready yet');
+      return;
+    }
+    filesAtRecordStartRef.current = { ...store.files };
+    recorder.start(title);
+    setIsRecording(true);
+    recIntervalRef.current = setInterval(() => {
+      setRecDuration(recorder.getCurrentDuration());
+    }, 100);
+  };
+
   const handleToggleRecording = async () => {
     const recorder = recorderRef.current;
     if (!recorder) {
@@ -156,13 +172,7 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
     }
 
     if (!isRecording) {
-      const fileName = activeFile?.split('/').pop() ?? 'untitled';
-      filesAtRecordStartRef.current = { ...store.files };
-      recorder.start(`Editor session — ${fileName}`);
-      setIsRecording(true);
-      recIntervalRef.current = setInterval(() => {
-        setRecDuration(recorder.getCurrentDuration());
-      }, 100);
+      setShowTitleModal(true);
       return;
     }
 
@@ -729,6 +739,12 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
           containerRef={ideAreaRef}
         />
       </div>
+
+      <PlaygroundModal
+        open={showTitleModal}
+        onOpenChange={setShowTitleModal}
+        onStartRecording={startRecording}
+      />
     </div>
   );
 }
