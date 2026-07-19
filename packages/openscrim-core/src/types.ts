@@ -131,6 +131,11 @@ export interface RecordingSession {
   finalContent: string;
   duration: number;
   events: RecordingEvent[];
+  /**
+   * Snapshot of the whole project (path → content) at recording start, so
+   * playback can show files the recording never opened.
+   */
+  files?: Record<string, string>;
   createdAt: Date;
   updatedAt: Date;
   metadata?: {

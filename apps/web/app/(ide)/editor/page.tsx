@@ -93,6 +93,8 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
 
   const recorderRef = useRef<MonacoRecorder | null>(null);
   const recIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  /** Project files as they were when recording started — saved with the session */
+  const filesAtRecordStartRef = useRef<Record<string, string>>({});
   const [isRecording, setIsRecording] = useState(false);
   const [recDuration, setRecDuration] = useState(0);
 
@@ -155,6 +157,7 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
 
     if (!isRecording) {
       const fileName = activeFile?.split('/').pop() ?? 'untitled';
+      filesAtRecordStartRef.current = { ...store.files };
       recorder.start(`Editor session — ${fileName}`);
       setIsRecording(true);
       recIntervalRef.current = setInterval(() => {
@@ -172,6 +175,7 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
 
     const session = recorder.stop();
     if (session) {
+      session.files = filesAtRecordStartRef.current;
       try {
         await storage.save(session);
         window.dispatchEvent(new CustomEvent('recording_saved'));

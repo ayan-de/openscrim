@@ -171,6 +171,15 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
         }
         const loaded = { ...meta, events };
         setSession(loaded);
+        // Seed the live store with the project snapshot so unvisited files
+        // exist in the sidebar, preview, and forks from t0
+        if (loaded.files) {
+          const seeded = loaded.files;
+          setPlayFiles((prev) => ({
+            ...prev,
+            files: { ...seeded, ...prev.files },
+          }));
+        }
         ensureEngine().loadSession(loaded);
       })
       .catch((err) => {
@@ -200,7 +209,8 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
     return () => document.removeEventListener('mousedown', close);
   }, [showForkList]);
 
-  // Every file path the recording touches, in order of first appearance
+  // Files the recording touches (in order of first appearance), then the
+  // rest of the project snapshot — so every file is visible and forkable.
   const recordedFiles = useMemo(() => {
     if (!session) return [];
     const paths: string[] = [];
@@ -209,6 +219,9 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
         const path = (event as FileChangeEvent).path;
         if (!paths.includes(path)) paths.push(path);
       }
+    }
+    for (const path of Object.keys(session.files ?? {}).sort()) {
+      if (!paths.includes(path)) paths.push(path);
     }
     return paths;
   }, [session]);
