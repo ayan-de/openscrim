@@ -23,6 +23,7 @@ export enum RecordingEventType {
   SELECTION_CHANGE = 'selection_change',
   CONTENT_CHANGE = 'content_change',
   FILE_CHANGE = 'file_change',
+  SCROLL = 'scroll',
   EDITOR_FOCUS = 'editor_focus',
   EDITOR_BLUR = 'editor_blur',
   LANGUAGE_CHANGE = 'language_change',
@@ -89,6 +90,13 @@ export interface FileChangeEvent extends BaseRecordingEvent {
   language?: string;
 }
 
+/** Editor viewport scrolled — playback mirrors it so viewers see what the author saw. */
+export interface ScrollEvent extends BaseRecordingEvent {
+  type: RecordingEventType.SCROLL;
+  scrollTop: number;
+  scrollLeft: number;
+}
+
 export interface EditorFocusEvent extends BaseRecordingEvent {
   type: RecordingEventType.EDITOR_FOCUS;
 }
@@ -117,6 +125,7 @@ export type RecordingEvent =
   | SelectionChangeEvent
   | ContentChangeEvent
   | FileChangeEvent
+  | ScrollEvent
   | EditorFocusEvent
   | EditorBlurEvent
   | LanguageChangeEvent
@@ -170,6 +179,7 @@ export interface RecordingConfig {
   captureSelections: boolean;
   captureContentChanges: boolean;
   captureFileChanges: boolean;
+  captureScroll: boolean;
   captureEditorEvents: boolean;
   debounceDelay: number;
   compressionEnabled: boolean;
@@ -182,6 +192,7 @@ export const DEFAULT_RECORDING_CONFIG: RecordingConfig = {
   captureSelections: true,
   captureContentChanges: true,
   captureFileChanges: true,
+  captureScroll: true,
   captureEditorEvents: true,
   debounceDelay: 50,
   compressionEnabled: true,

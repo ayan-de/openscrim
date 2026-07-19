@@ -255,6 +255,21 @@ export class RecordingManager {
     this.addEvent(event);
   }
 
+  recordScroll(scrollTop: number, scrollLeft: number): void {
+    if (!this.isRecording() || !this.config.captureScroll) return;
+
+    const event: RecordingEvent = {
+      id: uuidv4(),
+      type: RecordingEventType.SCROLL,
+      timestamp: Date.now(),
+      sessionId: this.sessionState.sessionId!,
+      scrollTop,
+      scrollLeft,
+    };
+
+    this.addEvent(event);
+  }
+
   recordFileChange(
     path: string,
     options: {

@@ -6,6 +6,7 @@ import type {
   LanguageChangeEvent,
   PlaybackEngine,
   PlaybackEventHandler,
+  ScrollEvent,
   SelectionChangeEvent,
 } from '@repo/openscrim-core';
 
@@ -14,6 +15,7 @@ export type PlaybackRenderData =
   | { type: 'reset'; content: string; language?: string }
   | { type: 'contentChange'; event: ContentChangeEvent }
   | { type: 'fileChange'; event: FileChangeEvent }
+  | { type: 'scroll'; event: ScrollEvent }
   | { type: 'cursorPosition'; event: CursorPositionEvent }
   | { type: 'selectionChange'; event: SelectionChangeEvent }
   | { type: 'languageChange'; event: LanguageChangeEvent };
@@ -80,6 +82,14 @@ export function applyPlaybackEvent(
       if (data.event.language) {
         monaco.editor.setModelLanguage(model, data.event.language);
       }
+      break;
+    }
+
+    case 'scroll': {
+      editor.setScrollPosition({
+        scrollTop: data.event.scrollTop,
+        scrollLeft: data.event.scrollLeft,
+      });
       break;
     }
 

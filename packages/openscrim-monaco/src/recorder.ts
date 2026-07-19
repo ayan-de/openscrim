@@ -33,6 +33,8 @@ export class MonacoRecorder {
   private persistentDisposables: monacoType.IDisposable[] = [];
   private initialContent = '';
   private sessionTitle = 'Untitled Session';
+  private scrollFlushTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingScroll: { top: number; left: number } | null = null;
 
   constructor(
     editor: monacoType.editor.IStandaloneCodeEditor,
@@ -174,6 +176,23 @@ export class MonacoRecorder {
         }
       ),
 
+      // Throttled with a trailing flush so the resting position after a
+      // scroll burst is always captured.
+      editor.onDidScrollChange((e: monacoType.IScrollEvent) => {
+        if (!manager.isRecording()) return;
+        if (!e.scrollTopChanged && !e.scrollLeftChanged) return;
+
+        this.pendingScroll = { top: e.scrollTop, left: e.scrollLeft };
+        if (this.scrollFlushTimer) return;
+        this.scrollFlushTimer = setTimeout(() => {
+          this.scrollFlushTimer = null;
+          if (this.pendingScroll && manager.isRecording()) {
+            manager.recordScroll(this.pendingScroll.top, this.pendingScroll.left);
+          }
+          this.pendingScroll = null;
+        }, 80);
+      }),
+
       editor.onDidChangeCursorPosition(
         (e: monacoType.editor.ICursorPositionChangedEvent) => {
           if (!manager.isRecording()) return;
@@ -223,5 +242,10 @@ export class MonacoRecorder {
   private detachSessionListeners(): void {
     this.sessionDisposables.forEach((d) => d?.dispose?.());
     this.sessionDisposables = [];
+    if (this.scrollFlushTimer) {
+      clearTimeout(this.scrollFlushTimer);
+      this.scrollFlushTimer = null;
+    }
+    this.pendingScroll = null;
   }
 }
