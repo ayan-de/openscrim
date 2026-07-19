@@ -1,135 +1,120 @@
-# Turborepo starter
+# OpenScrim
 
-This Turborepo starter is maintained by the Turborepo core team.
+**Open-source interactive code screencasts.** Record a coding session as events — not pixels — and play it back like a video that viewers can **pause, edit, and fork at any moment**.
 
-## Using this example
+[![npm — core](https://img.shields.io/npm/v/%40thisisayande%2Fopenscrim-core?label=%40thisisayande%2Fopenscrim-core)](https://www.npmjs.com/package/@thisisayande/openscrim-core)
+[![npm — monaco](https://img.shields.io/npm/v/%40thisisayande%2Fopenscrim-monaco?label=%40thisisayande%2Fopenscrim-monaco)](https://www.npmjs.com/package/@thisisayande/openscrim-monaco)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-Run the following command:
+<!-- TODO: demo GIF here — record a scrim being played + forked, ~10s -->
 
-```sh
-npx create-turbo@latest
+## Why events instead of video?
+
+Platforms like Scrimba proved that the best way to teach code isn't video — it's a recording of the *editor itself*. OpenScrim is an open implementation of that idea:
+
+- 🎬 **Tiny recordings** — a session is a stream of timestamped keystrokes, cursor moves, and edits. Roughly 100× smaller than pixel video.
+- ⏯️ **True seek** — jump anywhere instantly; playback is deterministic event replay, not decoded frames.
+- 🍴 **Forkable** — pause at any timestamp and the viewer gets the instructor's exact code, editable, in the same editor.
+- 📄 **Selectable, real text** — viewers can copy code straight out of the "video".
+- 🔓 **Open format** — recordings are portable `.tantrica` files (gzipped JSON with a fast-readable metadata header). No lock-in.
+
+## Use the SDK
+
+Embed recording and playback in any app that hosts a [Monaco editor](https://microsoft.github.io/monaco-editor/):
+
+```bash
+npm install @thisisayande/openscrim-monaco monaco-editor
 ```
 
-## What's inside?
+**Record:**
 
-This Turborepo includes the following packages/apps:
+```ts
+import { MonacoRecorder } from '@thisisayande/openscrim-monaco';
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+const recorder = new MonacoRecorder(editor, monaco);
+recorder.start();
+// ... user codes ...
+const session = recorder.stop(); // events + initial/final content
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+**Play back:**
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+```ts
+import { PlaybackEngine } from '@thisisayande/openscrim-core';
+import { attachPlayback } from '@thisisayande/openscrim-monaco';
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+const engine = new PlaybackEngine(session.events, handlers);
+attachPlayback(editor, monaco, engine, {
+  onContentRendered: (content) => setCode(content), // keep React state in sync
+});
+engine.play();
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+| Package | What it is |
+| --- | --- |
+| [`@thisisayande/openscrim-core`](https://www.npmjs.com/package/@thisisayande/openscrim-core) | Framework-agnostic engine: event model, `RecordingManager`, `PlaybackEngine`, compression, `.tantrica` file format. No React, no Monaco. |
+| [`@thisisayande/openscrim-monaco`](https://www.npmjs.com/package/@thisisayande/openscrim-monaco) | Monaco binding: `MonacoRecorder` + `attachPlayback`. Monaco is a type-only peer dep — adds no editor copy to your bundle. |
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+A drop-in `<script>`-tag embed player (no bundler, no Monaco knowledge needed) is on the roadmap.
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+## Run the web app
 
-### Remote Caching
+The repo also contains a full Next.js studio: recording UI, playback viewer with fork-to-edit, a recording library, and shareable links.
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+```bash
+git clone https://github.com/ayan-de/openscrim.git
+cd openscrim
+pnpm install
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+**Fastest start — fully local, no backend:** create `apps/web/.env.local` with
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+NEXT_PUBLIC_LOCAL_ONLY=true
 ```
 
-## Useful Links
+Recordings are stored in your browser's IndexedDB; no database or auth needed.
 
-Learn more about the power of Turborepo:
+**Full setup (cloud sync + Google sign-in):** set these in `apps/web/.env.local` instead:
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+```
+MONGODB_URI=...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+AUTH_SECRET=...
+```
+
+Then:
+
+```bash
+pnpm dev          # all packages (web app on http://localhost:3000)
+pnpm build        # build everything
+pnpm check-types  # typecheck
+```
+
+## Repo structure
+
+```
+packages/openscrim-core     # domain engine (published to npm)
+packages/openscrim-monaco   # Monaco binding (published to npm)
+apps/web                    # Next.js 15 studio: record, play, fork, share
+```
+
+Built with pnpm + Turborepo. After editing `packages/*/src`, run `pnpm build` — the web app resolves packages via their compiled `dist/`.
+
+## Roadmap
+
+- [ ] Drop-in embed player (`<script>` tag + one div) for blogs, docs, and course sites
+- [ ] Format spec published as a standalone document, with round-trip test suite
+- [ ] Audio track synced to the event timeline
+- [ ] Hosted cloud for teachers: share links, analytics (watch time, drop-off, forks), team workspaces
+- [ ] In-browser code execution for playback previews
+- [ ] LTI 1.3 integration (Canvas/Moodle) for classrooms
+
+## Contributing
+
+Issues and PRs are welcome. The codebase is TypeScript end-to-end; start with [`packages/openscrim-core/src/types.ts`](packages/openscrim-core/src/types.ts) to understand the event model everything is built on.
+
+## License
+
+[MIT](./LICENSE) © Ayan De
