@@ -23,10 +23,11 @@ npm install @thisisayande/openscrim-core
 ```ts
 import { PlaybackEngine } from '@thisisayande/openscrim-core';
 
-const engine = new PlaybackEngine(session.events, {
-  onEvent: (event) => renderEventIntoYourEditor(event),
-  onStateChange: (state) => console.log(state),
+const engine = new PlaybackEngine();
+engine.addEventHandler(({ type, data }) => {
+  if (type === 'eventProcessed') renderIntoYourEditor(data);
 });
+engine.loadSession(session);
 
 engine.play();
 engine.seek(30_000); // jump to 0:30
@@ -36,7 +37,8 @@ engine.setSpeed(1.5);
 ## Environment notes
 
 - Recording, playback, and event compression work in **browsers and Node**.
-- The binary `.tantrica` read/write helpers (`writeTantricaBuffer` / `readTantricaBuffer`) currently require **Node** (they use `zlib` and `Buffer`); use them server-side. Plain-JSON serialization works everywhere.
+- **Reading** `.tantrica` files works everywhere: `parseTantricaBytes(bytes)` is async and uses Web APIs only (`DecompressionStream`), so it runs in browsers and Node 18+.
+- The synchronous binary helpers (`writeTantricaBuffer` / `readTantricaBuffer`) require **Node** (they use `zlib` and `Buffer`); use them server-side. Plain-JSON serialization works everywhere.
 
 ## Status
 

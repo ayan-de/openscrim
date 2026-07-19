@@ -18,6 +18,15 @@ Platforms like Scrimba proved that the best way to teach code isn't video — it
 - 📄 **Selectable, real text** — viewers can copy code straight out of the "video".
 - 🔓 **Open format** — recordings are portable `.tantrica` files (gzipped JSON with a fast-readable metadata header). No lock-in.
 
+## Embed a player (no build tools)
+
+One div + one script tag — Monaco is lazy-loaded from a CDN, viewers get play/pause/seek/speed and can pause to edit the code:
+
+```html
+<div data-openscrim-src="/recordings/intro.tantrica" data-height="420px"></div>
+<script src="https://cdn.jsdelivr.net/npm/@thisisayande/openscrim-player/dist/embed.global.js"></script>
+```
+
 ## Use the SDK
 
 Embed recording and playback in any app that hosts a [Monaco editor](https://microsoft.github.io/monaco-editor/):
@@ -43,10 +52,11 @@ const session = recorder.stop(); // events + initial/final content
 import { PlaybackEngine } from '@thisisayande/openscrim-core';
 import { attachPlayback } from '@thisisayande/openscrim-monaco';
 
-const engine = new PlaybackEngine(session.events, handlers);
+const engine = new PlaybackEngine();
 attachPlayback(editor, monaco, engine, {
   onContentRendered: (content) => setCode(content), // keep React state in sync
 });
+engine.loadSession(session);
 engine.play();
 ```
 
@@ -54,8 +64,7 @@ engine.play();
 | --- | --- |
 | [`@thisisayande/openscrim-core`](https://www.npmjs.com/package/@thisisayande/openscrim-core) | Framework-agnostic engine: event model, `RecordingManager`, `PlaybackEngine`, compression, `.tantrica` file format. No React, no Monaco. |
 | [`@thisisayande/openscrim-monaco`](https://www.npmjs.com/package/@thisisayande/openscrim-monaco) | Monaco binding: `MonacoRecorder` + `attachPlayback`. Monaco is a type-only peer dep — adds no editor copy to your bundle. |
-
-A drop-in `<script>`-tag embed player (no bundler, no Monaco knowledge needed) is on the roadmap.
+| [`@thisisayande/openscrim-player`](https://www.npmjs.com/package/@thisisayande/openscrim-player) | Drop-in player: script-tag embed or `createPlayer(div, { src })`. Loads Monaco from a CDN at runtime; ~24 KB bundle. |
 
 ## Run the web app
 
@@ -97,6 +106,7 @@ pnpm check-types  # typecheck
 ```
 packages/openscrim-core     # domain engine (published to npm)
 packages/openscrim-monaco   # Monaco binding (published to npm)
+packages/openscrim-player   # drop-in embed player (published to npm)
 apps/web                    # Next.js 15 studio: record, play, fork, share
 ```
 
@@ -104,8 +114,8 @@ Built with pnpm + Turborepo. After editing `packages/*/src`, run `pnpm build` �
 
 ## Roadmap
 
-- [ ] Drop-in embed player (`<script>` tag + one div) for blogs, docs, and course sites
-- [ ] Format spec published as a standalone document, with round-trip test suite
+- [x] Drop-in embed player (`<script>` tag + one div) for blogs, docs, and course sites
+- [ ] Format spec published as a standalone document
 - [ ] Audio track synced to the event timeline
 - [ ] Hosted cloud for teachers: share links, analytics (watch time, drop-off, forks), team workspaces
 - [ ] In-browser code execution for playback previews

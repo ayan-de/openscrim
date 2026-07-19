@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenScrim player demo</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 860px;
+        margin: 40px auto;
+        padding: 0 16px;
+        background: #111;
+        color: #eee;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OpenScrim player demo</h1>
+    <p>
+      Serve this directory (e.g. <code>npx serve packages/openscrim-player</code> from the repo
+      root after <code>pnpm build</code>) and drop a recording at
+      <code>example/demo.tantrica</code>.
+    </p>
+
+    <div data-openscrim-src="./demo.tantrica" data-height="420px"></div>
+
+    <script src="../dist/embed.global.js"></script>
+  </body>
+</html>

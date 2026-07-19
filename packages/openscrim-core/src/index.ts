@@ -46,4 +46,5 @@ export {
   tantricaFileToSession,
   writeTantricaBuffer,
   readTantricaBuffer,
+  parseTantricaBytes,
 } from './format.js';

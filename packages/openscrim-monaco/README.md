@@ -27,13 +27,14 @@ const session = recorder.stop(); // RecordingSession: events + initial/final con
 import { PlaybackEngine } from '@thisisayande/openscrim-core';
 import { attachPlayback } from '@thisisayande/openscrim-monaco';
 
-const engine = new PlaybackEngine(session.events, handlers);
+const engine = new PlaybackEngine();
 attachPlayback(editor, monaco, engine, {
   // React hosts that mirror editor content into state MUST sync via this
   // callback, or a stale `value` prop will clobber applied edits.
   onContentRendered: (content) => setCode(content),
 });
 
+engine.loadSession(session);
 engine.play();
 ```
 

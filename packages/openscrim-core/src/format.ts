@@ -113,6 +113,34 @@ export function readTantricaBuffer(buffer: Buffer): TantricaFile {
   return JSON.parse(decompressed.toString('utf-8'));
 }
 
+/**
+ * Parses a `.tantrica` payload (binary or plain JSON) using Web APIs only —
+ * works in browsers and Node 18+, no Buffer/zlib required. Async because
+ * browser gzip decompression (DecompressionStream) is stream-based.
+ */
+export async function parseTantricaBytes(
+  bytes: Uint8Array
+): Promise<TantricaFile> {
+  if (
+    bytes[0] !== 0x54 ||
+    bytes[1] !== 0x4e ||
+    bytes[2] !== 0x54 ||
+    bytes[3] !== 0x43
+  ) {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const headerLength = view.getUint32(6);
+  const compressed = bytes.subarray(10 + headerLength);
+
+  const stream = new Blob([compressed as BlobPart])
+    .stream()
+    .pipeThrough(new DecompressionStream('gzip'));
+  const decompressed = await new Response(stream).arrayBuffer();
+  return JSON.parse(new TextDecoder().decode(decompressed));
+}
+
 function gzipSync(data: Buffer): Buffer {
   const zlib = requireZlib();
   return zlib.gzipSync(data);

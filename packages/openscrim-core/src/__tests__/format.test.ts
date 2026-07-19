@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  parseTantricaBytes,
   readTantricaBuffer,
   sessionToTantricaFile,
   tantricaFileToSession,
@@ -83,6 +84,31 @@ describe('writeTantricaBuffer / readTantricaBuffer', () => {
     const jsonBuffer = Buffer.from(JSON.stringify(file), 'utf-8');
 
     expect(readTantricaBuffer(jsonBuffer)).toEqual(file);
+  });
+
+  it('parseTantricaBytes reads the binary format without Buffer/zlib', async () => {
+    const file = sessionToTantricaFile(makeSession({ title: 'browser 🎬' }));
+    const buffer = writeTantricaBuffer(file);
+    const bytes = new Uint8Array(buffer);
+
+    expect(await parseTantricaBytes(bytes)).toEqual(file);
+  });
+
+  it('parseTantricaBytes falls back to plain JSON', async () => {
+    const file = sessionToTantricaFile(makeSession());
+    const bytes = new TextEncoder().encode(JSON.stringify(file));
+
+    expect(await parseTantricaBytes(bytes)).toEqual(file);
+  });
+
+  it('parseTantricaBytes handles byte views with a nonzero offset', async () => {
+    const file = sessionToTantricaFile(makeSession());
+    const buffer = writeTantricaBuffer(file);
+    const padded = new Uint8Array(buffer.length + 8);
+    padded.set(buffer, 8);
+    const view = padded.subarray(8);
+
+    expect(await parseTantricaBytes(view)).toEqual(file);
   });
 
   it('round-trips an empty session', () => {
