@@ -86,6 +86,8 @@ function PlaygroundEditor() {
 
   const PREVIEW_MIN_W = 256;
   const PREVIEW_MIN_H = 192;
+  const PREVIEW_DEFAULT_W = 340;
+  const PREVIEW_DEFAULT_H = 420;
 
   const ideAreaRef = useRef<HTMLDivElement>(null);
   const [previewRect, setPreviewRect] = useState<{
@@ -109,10 +111,10 @@ function PlaygroundEditor() {
     setPreviewRect(
       (prev) =>
         prev ?? {
-          x: Math.max(el.clientWidth - 416 - 24, 16),
-          y: Math.max(el.clientHeight - 384 - 24, 16),
-          w: 416,
-          h: 384,
+          x: Math.max(el.clientWidth - PREVIEW_DEFAULT_W - 24, 16),
+          y: Math.max(el.clientHeight - PREVIEW_DEFAULT_H - 24, 16),
+          w: PREVIEW_DEFAULT_W,
+          h: PREVIEW_DEFAULT_H,
         }
     );
   }, []);

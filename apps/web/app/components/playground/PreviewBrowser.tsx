@@ -9,6 +9,34 @@ interface PreviewBrowserProps {
 }
 
 /**
+ * Slim scrollbars injected into the preview document, tinted with the app's
+ * primary color. Hardcoded (mirrors --primary in globals.css) because the
+ * sandboxed iframe can't see the parent document's CSS variables.
+ */
+const primaryAt = (alpha: number) =>
+  `oklch(0.7686 0.1647 70.0804 / ${alpha})`;
+const SCROLLBAR_STYLE = `<style>
+  * { scrollbar-width: thin; scrollbar-color: ${primaryAt(0.55)} transparent; }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: ${primaryAt(0.55)};
+    border-radius: 8px;
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+  *::-webkit-scrollbar-thumb:hover { background-color: ${primaryAt(0.85)}; }
+  *::-webkit-scrollbar-corner { background: transparent; }
+</style>`;
+
+function injectScrollbarStyle(doc: string): string {
+  const headClose = /<\/head>/i;
+  return headClose.test(doc)
+    ? doc.replace(headClose, `${SCROLLBAR_STYLE}</head>`)
+    : SCROLLBAR_STYLE + doc;
+}
+
+/**
  * Renders the in-memory playground files in a sandboxed iframe.
  * Inlines styles.css and script.js into index.html so no server is needed.
  */
@@ -18,7 +46,9 @@ export default function PreviewBrowser({ store }: PreviewBrowserProps) {
   const srcDoc = useMemo(() => {
     const html = store.files[`${CODE_ROOT}/index.html`];
     if (html === undefined) {
-      return '<body style="background:#131313;color:#888;font-family:sans-serif;display:grid;place-items:center;min-height:90vh"><p>Create an index.html to see a preview</p></body>';
+      return injectScrollbarStyle(
+        '<body style="background:#131313;color:#888;font-family:sans-serif;display:grid;place-items:center;min-height:90vh"><p>Create an index.html to see a preview</p></body>'
+      );
     }
 
     let doc = html;
@@ -43,7 +73,7 @@ export default function PreviewBrowser({ store }: PreviewBrowserProps) {
           : doc;
       }
     }
-    return doc;
+    return injectScrollbarStyle(doc);
   }, [store]);
 
   return (
