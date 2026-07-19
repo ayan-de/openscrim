@@ -2,6 +2,7 @@ import type * as monacoType from 'monaco-editor';
 import type {
   ContentChangeEvent,
   CursorPositionEvent,
+  FileChangeEvent,
   LanguageChangeEvent,
   PlaybackEngine,
   PlaybackEventHandler,
@@ -12,6 +13,7 @@ import type {
 export type PlaybackRenderData =
   | { type: 'reset'; content: string; language?: string }
   | { type: 'contentChange'; event: ContentChangeEvent }
+  | { type: 'fileChange'; event: FileChangeEvent }
   | { type: 'cursorPosition'; event: CursorPositionEvent }
   | { type: 'selectionChange'; event: SelectionChangeEvent }
   | { type: 'languageChange'; event: LanguageChangeEvent };
@@ -65,6 +67,19 @@ export function applyPlaybackEvent(
       }));
       model.applyEdits(edits);
       onContentRendered?.(model.getValue());
+      break;
+    }
+
+    case 'fileChange': {
+      // Single-editor rendering: show the newly active file's snapshot.
+      // Multi-file hosts can intercept these events for per-file models.
+      if (data.event.content !== undefined) {
+        model.setValue(data.event.content);
+        onContentRendered?.(data.event.content);
+      }
+      if (data.event.language) {
+        monaco.editor.setModelLanguage(model, data.event.language);
+      }
       break;
     }
 

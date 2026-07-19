@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
@@ -10,36 +11,60 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLoading } from '@/context/LoadingContext';
 import { getRecordingStorage } from '@/lib/storage';
 import { formatDuration } from '@/lib/formatDuration';
+import type { RecordingSession } from '@repo/openscrim-core';
 
 import { getMaterialFileIcon } from 'file-extension-icon-js';
 import FileExplorer from '@/components/playground/FileExplorer';
-import PreviewBrowser from '@/components/playground/PreviewBrowser';
+import FloatingPreviewWindow from '@/components/playground/FloatingPreviewWindow';
+import PlaygroundPlayer from '@/components/playground/PlaygroundPlayer';
 import TerminalPane from '@/components/playground/TerminalPane';
 
 import {
-  STARTER_FILES,
-  CODE_ROOT,
   buildTree,
   createDir,
   createFile,
   deletePath,
   renamePath,
+  starterFilesFor,
   updateFile,
 } from '@/components/playground/fileStore';
-import type { PlaygroundFiles } from '@/components/playground/fileStore';
+import type {
+  PlaygroundFiles,
+  PlaygroundTemplate,
+} from '@/components/playground/fileStore';
 
 type SideMenuTab = 'about' | 'explorer' | 'settings';
 
 export default function EditorPage() {
-  const [store, setStore] = useState<PlaygroundFiles>(STARTER_FILES);
-  const [openDirs, setOpenDirs] = useState<Set<string>>(new Set([CODE_ROOT]));
-  const [openFiles, setOpenFiles] = useState<string[]>([
-    `${CODE_ROOT}/index.html`,
-  ]);
+  return (
+    <Suspense>
+      <EditorPageContent />
+    </Suspense>
+  );
+}
+
+function EditorPageContent() {
+  const params = useSearchParams();
+  // ?play=<recordingId> swaps the playground for the playback view
+  const playId = params.get('play');
+  const template: PlaygroundTemplate =
+    params.get('template') === 'react' ? 'react' : 'vanilla';
+  if (playId) return <PlaygroundPlayer sessionId={playId} />;
+  // Key forces a fresh playground when navigating between templates
+  return <PlaygroundEditor key={template} template={template} />;
+}
+
+function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
+  const starter = starterFilesFor(template);
+  const [store, setStore] = useState<PlaygroundFiles>(starter.store);
+  const [openDirs, setOpenDirs] = useState<Set<string>>(
+    new Set(starter.store.dirs)
+  );
+  const [openFiles, setOpenFiles] = useState<string[]>([starter.entryFile]);
   /** File opened by single click — shown as one italic tab that the next single click replaces */
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [activeFile, setActiveFile] = useState<string | null>(
-    `${CODE_ROOT}/index.html`
+    starter.entryFile
   );
 
   const openTabs =
@@ -55,97 +80,7 @@ export default function EditorPage() {
   const toggleTerminal = () => setIsTerminalOpen((open) => !open);
   const togglePreview = () => setIsPreviewOpen((open) => !open);
 
-  type PreviewInteraction =
-    | 'move'
-    | 'n'
-    | 's'
-    | 'e'
-    | 'w'
-    | 'ne'
-    | 'nw'
-    | 'se'
-    | 'sw';
-
-  const PREVIEW_MIN_W = 256;
-  const PREVIEW_MIN_H = 192;
-
   const ideAreaRef = useRef<HTMLDivElement>(null);
-  const [previewRect, setPreviewRect] = useState<{
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  } | null>(null);
-  const [isPreviewInteracting, setIsPreviewInteracting] = useState(false);
-  const previewInteractionRef = useRef<{
-    mode: PreviewInteraction;
-    startX: number;
-    startY: number;
-    base: { x: number; y: number; w: number; h: number };
-  } | null>(null);
-
-  // Place the window bottom-right once the IDE area has a measurable size
-  useEffect(() => {
-    const el = ideAreaRef.current;
-    if (!el) return;
-    setPreviewRect(
-      (prev) =>
-        prev ?? {
-          x: Math.max(el.clientWidth - 416 - 24, 16),
-          y: Math.max(el.clientHeight - 384 - 24, 16),
-          w: 416,
-          h: 384,
-        }
-    );
-  }, []);
-
-  const startPreviewInteraction =
-    (mode: PreviewInteraction) => (e: React.PointerEvent) => {
-      if (!previewRect) return;
-      e.preventDefault();
-      e.stopPropagation();
-      previewInteractionRef.current = {
-        mode,
-        startX: e.clientX,
-        startY: e.clientY,
-        base: previewRect,
-      };
-      setIsPreviewInteracting(true);
-
-      const onMove = (ev: PointerEvent) => {
-        const s = previewInteractionRef.current;
-        if (!s) return;
-        const dx = ev.clientX - s.startX;
-        const dy = ev.clientY - s.startY;
-        let { x, y, w, h } = s.base;
-
-        if (s.mode === 'move') {
-          x += dx;
-          y += dy;
-        } else {
-          if (s.mode.includes('e')) w = Math.max(PREVIEW_MIN_W, s.base.w + dx);
-          if (s.mode.includes('s')) h = Math.max(PREVIEW_MIN_H, s.base.h + dy);
-          if (s.mode.includes('w')) {
-            w = Math.max(PREVIEW_MIN_W, s.base.w - dx);
-            x = s.base.x + (s.base.w - w);
-          }
-          if (s.mode.includes('n')) {
-            h = Math.max(PREVIEW_MIN_H, s.base.h - dy);
-            y = s.base.y + (s.base.h - h);
-          }
-        }
-
-        setPreviewRect({ x, y, w, h });
-      };
-      const onUp = () => {
-        previewInteractionRef.current = null;
-        setIsPreviewInteracting(false);
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onUp);
-      };
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-    };
 
   const [editorOptions, setEditorOptions] =
     useState<monacoType.editor.IStandaloneEditorConstructionOptions>({
@@ -158,8 +93,16 @@ export default function EditorPage() {
 
   const recorderRef = useRef<MonacoRecorder | null>(null);
   const recIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  /** Project files as they were when recording started — saved with the session */
+  const filesAtRecordStartRef = useRef<Record<string, string>>({});
   const [isRecording, setIsRecording] = useState(false);
   const [recDuration, setRecDuration] = useState(0);
+
+  // "Plays" dropdown — saved recordings, playable via /editor?play=<id>
+  const [showPlays, setShowPlays] = useState(false);
+  const [plays, setPlays] = useState<RecordingSession[]>([]);
+  const [playsLoading, setPlaysLoading] = useState(false);
+  const playsRef = useRef<HTMLDivElement>(null);
 
   const { isAuthenticated } = useAuth();
   const { showSuccess, showError } = useLoading();
@@ -171,6 +114,31 @@ export default function EditorPage() {
       recorderRef.current?.dispose();
     };
   }, []);
+
+  // Fetch the recording list fresh each time the dropdown opens
+  useEffect(() => {
+    if (!showPlays) return;
+
+    setPlaysLoading(true);
+    getRecordingStorage(() => isAuthenticated)
+      .list(1, 50)
+      .then((result) => {
+        setPlays(
+          [...result.recordings].sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+        );
+      })
+      .catch((err) => console.error('Failed to load recordings:', err))
+      .finally(() => setPlaysLoading(false));
+
+    const close = (e: MouseEvent) => {
+      if (!playsRef.current?.contains(e.target as Node)) setShowPlays(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showPlays, isAuthenticated]);
 
   const handleEditorMount = (
     editor: monacoType.editor.IStandaloneCodeEditor,
@@ -189,6 +157,7 @@ export default function EditorPage() {
 
     if (!isRecording) {
       const fileName = activeFile?.split('/').pop() ?? 'untitled';
+      filesAtRecordStartRef.current = { ...store.files };
       recorder.start(`Editor session — ${fileName}`);
       setIsRecording(true);
       recIntervalRef.current = setInterval(() => {
@@ -206,6 +175,7 @@ export default function EditorPage() {
 
     const session = recorder.stop();
     if (session) {
+      session.files = filesAtRecordStartRef.current;
       try {
         await storage.save(session);
         window.dispatchEvent(new CustomEvent('recording_saved'));
@@ -343,8 +313,69 @@ export default function EditorPage() {
               {formatDuration(recDuration, 'timer')}
             </span>
           )}
+          <div className="relative" ref={playsRef}>
+            <button
+              onClick={() => setShowPlays((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-bold tracking-wider transition-colors cursor-pointer ${
+                showPlays
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+              title="Play a saved recording"
+            >
+              <FaPlay className="text-[9px]" />
+              PLAYS
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {showPlays && (
+              <div className="absolute top-full mt-2 right-0 w-80 bg-popover text-popover-foreground border border-border rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+                {playsLoading ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    Loading recordings…
+                  </div>
+                ) : plays.length === 0 ? (
+                  <div className="p-4 text-sm text-muted-foreground text-center">
+                    No recordings yet — hit RECORD to make one
+                  </div>
+                ) : (
+                  plays.map((play) => (
+                    <Link
+                      key={play.id}
+                      href={`/editor?play=${play.id}`}
+                      onClick={() => setShowPlays(false)}
+                      className="flex items-center justify-between gap-3 px-3 py-2 hover:bg-accent/50 border-b border-border last:border-b-0 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">
+                          {play.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDuration(play.duration, 'timer')} •{' '}
+                          {new Date(play.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <FaPlay className="text-[10px] text-primary flex-shrink-0" />
+                    </Link>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           <button
             onClick={handleToggleRecording}
+            title={isRecording ? 'Stop recording' : 'Start recording'}
             className={`flex items-center gap-1.5 px-4 py-1 rounded text-[11px] font-bold tracking-wider transition-colors cursor-pointer shadow-sm ${
               isRecording
                 ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
@@ -358,8 +389,8 @@ export default function EditorPage() {
               </>
             ) : (
               <>
-                <FaPlay className="text-[9px]" />
-                RUN
+                <FaCircle className="text-[9px]" />
+                RECORD
               </>
             )}
           </button>
@@ -691,95 +722,12 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* Preview — floating window, draggable + resizable from all edges/corners */}
-        <div
-          className={`absolute z-30 flex flex-col rounded-lg border border-border bg-background shadow-2xl transition-opacity duration-200 ${
-            isPreviewOpen && previewRect
-              ? 'opacity-100'
-              : 'opacity-0 pointer-events-none'
-          }`}
-          style={
-            previewRect
-              ? {
-                  left: previewRect.x,
-                  top: previewRect.y,
-                  width: previewRect.w,
-                  height: previewRect.h,
-                }
-              : undefined
-          }
-        >
-          {/* Edge handles */}
-          <div
-            onPointerDown={startPreviewInteraction('n')}
-            className="absolute -top-1 left-2 right-2 h-2 cursor-ns-resize z-10"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('s')}
-            className="absolute -bottom-1 left-2 right-2 h-2 cursor-ns-resize z-10"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('w')}
-            className="absolute -left-1 top-2 bottom-2 w-2 cursor-ew-resize z-10"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('e')}
-            className="absolute -right-1 top-2 bottom-2 w-2 cursor-ew-resize z-10"
-          />
-          {/* Corner handles */}
-          <div
-            onPointerDown={startPreviewInteraction('nw')}
-            className="absolute -top-1 -left-1 w-3.5 h-3.5 cursor-nwse-resize z-20"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('ne')}
-            className="absolute -top-1 -right-1 w-3.5 h-3.5 cursor-nesw-resize z-20"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('sw')}
-            className="absolute -bottom-1 -left-1 w-3.5 h-3.5 cursor-nesw-resize z-20"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('se')}
-            className="absolute -bottom-1 -right-1 w-3.5 h-3.5 cursor-nwse-resize z-20"
-          />
-
-          <div
-            onPointerDown={startPreviewInteraction('move')}
-            className="flex items-center justify-between px-3 py-1.5 bg-sidebar border-b border-border cursor-move select-none flex-shrink-0 rounded-t-lg"
-          >
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Preview
-            </span>
-            <button
-              onClick={togglePreview}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-accent cursor-pointer"
-              title="Close Preview"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-          <div
-            className={`flex-grow min-h-0 overflow-hidden rounded-b-lg ${
-              isPreviewInteracting ? 'pointer-events-none' : ''
-            }`}
-          >
-            <PreviewBrowser store={store} />
-          </div>
-        </div>
+        <FloatingPreviewWindow
+          store={store}
+          open={isPreviewOpen}
+          onClose={togglePreview}
+          containerRef={ideAreaRef}
+        />
       </div>
     </div>
   );

@@ -18,6 +18,8 @@ export interface TantricaFile {
   };
   initialContent: string;
   finalContent: string;
+  /** Project snapshot at recording start (path → content) */
+  files?: Record<string, string>;
   editorConfig: {
     fontSize: number;
     tabSize: number;
@@ -43,6 +45,7 @@ export function sessionToTantricaFile(session: RecordingSession): TantricaFile {
     },
     initialContent: session.initialContent,
     finalContent: session.finalContent,
+    files: session.files,
     editorConfig: {
       fontSize: session.metadata?.fontSize ?? 14,
       tabSize: session.metadata?.tabSize ?? 2,
@@ -63,6 +66,7 @@ export function tantricaFileToSession(file: TantricaFile): RecordingSession {
     finalContent: file.finalContent,
     duration: file.metadata.duration,
     events: file.events,
+    files: file.files,
     createdAt: new Date(file.metadata.createdAt),
     updatedAt: new Date(file.metadata.createdAt),
     metadata: {

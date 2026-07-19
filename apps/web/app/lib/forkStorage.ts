@@ -76,12 +76,15 @@ export async function getFork(id: string): Promise<Fork | null> {
 export async function updateForkEdits(
   id: string,
   edits: string,
-  cursor: { lineNumber: number; column: number }
+  cursor: { lineNumber: number; column: number },
+  extras?: { files?: Record<string, string>; activePath?: string }
 ): Promise<void> {
   const fork = await getFork(id);
   if (!fork) return;
   fork.edits = edits;
   fork.cursor = cursor;
+  if (extras?.files) fork.files = extras.files;
+  if (extras?.activePath) fork.activePath = extras.activePath;
   fork.updatedAt = Date.now();
   await saveFork(fork);
 }
@@ -109,6 +112,8 @@ export async function createFork(params: {
   content: string;
   language: string;
   cursor: { lineNumber: number; column: number };
+  files?: Record<string, string>;
+  activePath?: string;
 }): Promise<Fork> {
   const forks = await getForks(params.recordingId);
   if (forks.length >= MAX_FORKS_PER_RECORDING) {
@@ -129,6 +134,8 @@ export async function createFork(params: {
     edits: params.content,
     createdAt: now,
     updatedAt: now,
+    files: params.files,
+    activePath: params.activePath,
   };
 
   await saveFork(fork);

@@ -62,6 +62,17 @@ export class MonacoRecorder {
     this.sessionTitle = title;
     this.initialContent = this.editor.getValue() ?? '';
     const sessionId = this.manager.startRecording(title);
+
+    // Stamp the file the session starts in so multi-file playback
+    // knows the active file from t0 without host-specific context.
+    const model = this.editor.getModel();
+    if (model) {
+      this.manager.recordFileChange(model.uri.path, {
+        content: model.getValue(),
+        language: model.getLanguageId(),
+      });
+    }
+
     this.attachSessionListeners();
     return sessionId;
   }
@@ -121,6 +132,22 @@ export class MonacoRecorder {
     const { editor, manager } = this;
 
     this.sessionDisposables.push(
+      // Fires when the host swaps the editor to another file's model
+      // (e.g. @monaco-editor/react's `path` prop, or a manual setModel).
+      editor.onDidChangeModel((e: monacoType.editor.IModelChangedEvent) => {
+        if (!manager.isRecording()) return;
+
+        const model = editor.getModel();
+        if (!model) return;
+
+        manager.setLanguage(model.getLanguageId());
+        manager.recordFileChange(model.uri.path, {
+          previousPath: e.oldModelUrl?.path,
+          content: model.getValue(),
+          language: model.getLanguageId(),
+        });
+      }),
+
       editor.onDidChangeModelContent(
         (e: monacoType.editor.IModelContentChangedEvent) => {
           if (!manager.isRecording()) return;

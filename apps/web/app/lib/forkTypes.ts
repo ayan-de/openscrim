@@ -13,4 +13,7 @@ export interface Fork {
   edits: string;
   createdAt: number;
   updatedAt: number;
+  /** Multi-file forks: path → edited content. `edits`/`cursor` describe `activePath`. */
+  files?: Record<string, string>;
+  activePath?: string;
 }

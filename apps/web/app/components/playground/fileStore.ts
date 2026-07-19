@@ -57,6 +57,81 @@ button {
   dirs: [CODE_ROOT],
 };
 
+export const REACT_STARTER_FILES: PlaygroundFiles = {
+  files: {
+    [`${CODE_ROOT}/index.html`]: `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>React Playground</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/main.jsx"></script>
+  </body>
+</html>
+`,
+    [`${CODE_ROOT}/src/main.jsx`]: `import { createRoot } from 'react-dom/client';
+import App from './App.jsx';
+import './styles.css';
+
+createRoot(document.getElementById('root')).render(<App />);
+`,
+    [`${CODE_ROOT}/src/App.jsx`]: `import { useState } from 'react';
+
+export default function App() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <main>
+      <h1>Hello, React!</h1>
+      <p>
+        Edit <code>src/App.jsx</code> and watch the preview update.
+      </p>
+      <button onClick={() => setCount((c) => c + 1)}>count is {count}</button>
+    </main>
+  );
+}
+`,
+    [`${CODE_ROOT}/src/styles.css`]: `body {
+  font-family: system-ui, sans-serif;
+  background: #131313;
+  color: #eee;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  text-align: center;
+}
+
+button {
+  background: #ff0000;
+  color: white;
+  border: 0;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+`,
+  },
+  dirs: [CODE_ROOT, `${CODE_ROOT}/src`],
+};
+
+export type PlaygroundTemplate = 'vanilla' | 'react';
+
+export function starterFilesFor(template: PlaygroundTemplate): {
+  store: PlaygroundFiles;
+  entryFile: string;
+} {
+  if (template === 'react') {
+    return {
+      store: REACT_STARTER_FILES,
+      entryFile: `${CODE_ROOT}/src/App.jsx`,
+    };
+  }
+  return { store: STARTER_FILES, entryFile: `${CODE_ROOT}/index.html` };
+}
+
 function parentDirs(path: string): string[] {
   const parts = path.split('/').filter(Boolean);
   const result: string[] = [];
@@ -192,4 +267,21 @@ export function renamePath(
 
 export function displayPath(path: string): string {
   return path.replace('/home/rdamn/', '~/');
+}
+
+const LANGUAGE_BY_EXT: Record<string, string> = {
+  js: 'javascript',
+  jsx: 'javascript',
+  ts: 'typescript',
+  tsx: 'typescript',
+  css: 'css',
+  html: 'html',
+  htm: 'html',
+  json: 'json',
+  md: 'markdown',
+};
+
+export function languageForPath(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase() ?? '';
+  return LANGUAGE_BY_EXT[ext] ?? 'plaintext';
 }

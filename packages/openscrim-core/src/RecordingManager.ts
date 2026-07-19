@@ -255,6 +255,28 @@ export class RecordingManager {
     this.addEvent(event);
   }
 
+  recordFileChange(
+    path: string,
+    options: {
+      previousPath?: string;
+      content?: string;
+      language?: string;
+    } = {}
+  ): void {
+    if (!this.isRecording() || !this.config.captureFileChanges) return;
+
+    const event: RecordingEvent = {
+      id: uuidv4(),
+      type: RecordingEventType.FILE_CHANGE,
+      timestamp: Date.now(),
+      sessionId: this.sessionState.sessionId!,
+      path,
+      ...options,
+    };
+
+    this.addEvent(event);
+  }
+
   private addEvent(event: RecordingEvent): void {
     this.sessionState.eventCount++;
     this.sessionState.lastEventTimestamp = event.timestamp;
