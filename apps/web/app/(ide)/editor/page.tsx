@@ -20,16 +20,18 @@ import PlaygroundPlayer from '@/components/playground/PlaygroundPlayer';
 import TerminalPane from '@/components/playground/TerminalPane';
 
 import {
-  STARTER_FILES,
-  CODE_ROOT,
   buildTree,
   createDir,
   createFile,
   deletePath,
   renamePath,
+  starterFilesFor,
   updateFile,
 } from '@/components/playground/fileStore';
-import type { PlaygroundFiles } from '@/components/playground/fileStore';
+import type {
+  PlaygroundFiles,
+  PlaygroundTemplate,
+} from '@/components/playground/fileStore';
 
 type SideMenuTab = 'about' | 'explorer' | 'settings';
 
@@ -42,22 +44,27 @@ export default function EditorPage() {
 }
 
 function EditorPageContent() {
+  const params = useSearchParams();
   // ?play=<recordingId> swaps the playground for the playback view
-  const playId = useSearchParams().get('play');
+  const playId = params.get('play');
+  const template: PlaygroundTemplate =
+    params.get('template') === 'react' ? 'react' : 'vanilla';
   if (playId) return <PlaygroundPlayer sessionId={playId} />;
-  return <PlaygroundEditor />;
+  // Key forces a fresh playground when navigating between templates
+  return <PlaygroundEditor key={template} template={template} />;
 }
 
-function PlaygroundEditor() {
-  const [store, setStore] = useState<PlaygroundFiles>(STARTER_FILES);
-  const [openDirs, setOpenDirs] = useState<Set<string>>(new Set([CODE_ROOT]));
-  const [openFiles, setOpenFiles] = useState<string[]>([
-    `${CODE_ROOT}/index.html`,
-  ]);
+function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
+  const starter = starterFilesFor(template);
+  const [store, setStore] = useState<PlaygroundFiles>(starter.store);
+  const [openDirs, setOpenDirs] = useState<Set<string>>(
+    new Set(starter.store.dirs)
+  );
+  const [openFiles, setOpenFiles] = useState<string[]>([starter.entryFile]);
   /** File opened by single click — shown as one italic tab that the next single click replaces */
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [activeFile, setActiveFile] = useState<string | null>(
-    `${CODE_ROOT}/index.html`
+    starter.entryFile
   );
 
   const openTabs =

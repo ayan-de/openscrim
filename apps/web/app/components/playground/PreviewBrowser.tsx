@@ -36,6 +36,112 @@ function injectScrollbarStyle(doc: string): string {
     : SCROLLBAR_STYLE + doc;
 }
 
+const hasJsxFiles = (store: PlaygroundFiles): boolean =>
+  Object.keys(store.files).some((p) => p.endsWith('.jsx'));
+
+/**
+ * Builds a self-contained document for React projects: JSX files are
+ * compiled in the iframe with Babel standalone, module imports are rewritten
+ * to blob URLs, and react/react-dom resolve to esm.sh via an import map
+ * (a real Vite dev server can't run inside an iframe).
+ */
+function buildReactSrcDoc(store: PlaygroundFiles): string | null {
+  const files: Record<string, string> = {};
+  for (const [path, content] of Object.entries(store.files)) {
+    if (path.startsWith(`${CODE_ROOT}/`)) {
+      files[path.slice(CODE_ROOT.length)] = content;
+    }
+  }
+
+  const html = files['/index.html'];
+  if (html === undefined) return null;
+
+  // The entry is index.html's local module script (Vite convention)
+  const scriptRe =
+    /<script[^>]*type=["']module["'][^>]*src=["']([^"']+)["'][^>]*>\s*<\/script>/i;
+  const entrySrc = html.match(scriptRe)?.[1] ?? '/src/main.jsx';
+  const entry = '/' + entrySrc.replace(/^\.?\//, '');
+  const doc = html.replace(scriptRe, '');
+
+  const filesJson = JSON.stringify(files).replace(/</g, '\\u003c');
+  const runtime = `
+<script type="importmap">
+{"imports":{"react":"https://esm.sh/react@19","react/jsx-runtime":"https://esm.sh/react@19/jsx-runtime","react-dom":"https://esm.sh/react-dom@19","react-dom/client":"https://esm.sh/react-dom@19/client"}}
+</script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+<script>
+(function () {
+  var FILES = ${filesJson};
+  var ENTRY = ${JSON.stringify(entry)};
+  var cache = {};
+
+  function resolve(spec, from) {
+    var parts = from.split('/').slice(0, -1);
+    spec.split('/').forEach(function (seg) {
+      if (seg === '.' || seg === '') return;
+      if (seg === '..') parts.pop();
+      else parts.push(seg);
+    });
+    var base = parts.join('/');
+    var candidates = [base, base + '.jsx', base + '.js'];
+    for (var i = 0; i < candidates.length; i++) {
+      if (candidates[i] in FILES) return candidates[i];
+    }
+    return null;
+  }
+
+  function moduleUrl(path) {
+    if (cache[path]) return cache[path];
+    var source = FILES[path] || '';
+    var code;
+    if (path.slice(-4) === '.css') {
+      code =
+        'var s=document.createElement("style");s.textContent=' +
+        JSON.stringify(source) +
+        ';document.head.appendChild(s);';
+    } else {
+      code = Babel.transform(source, {
+        presets: [['react', { runtime: 'automatic' }]],
+        filename: path,
+      }).code;
+      code = code.replace(
+        /(from\\s*|import\\s*)(["'])(\\.[^"']+)\\2/g,
+        function (match, kw, q, spec) {
+          var resolved = resolve(spec, path);
+          return resolved ? kw + q + moduleUrl(resolved) + q : match;
+        }
+      );
+    }
+    var url = URL.createObjectURL(
+      new Blob([code], { type: 'text/javascript' })
+    );
+    cache[path] = url;
+    return url;
+  }
+
+  function fail(err) {
+    var pre = document.createElement('pre');
+    pre.style.cssText =
+      'color:#ff6b6b;background:#131313;margin:0;padding:16px;white-space:pre-wrap;font-family:monospace;font-size:12px';
+    pre.textContent = String(err);
+    document.body.appendChild(pre);
+    console.error(err);
+  }
+
+  try {
+    import(moduleUrl(ENTRY)).catch(fail);
+  } catch (err) {
+    fail(err);
+  }
+})();
+</script>`;
+
+  const withRuntime = /<\/body>/i.test(doc)
+    ? doc.replace(/<\/body>/i, `${runtime}</body>`)
+    : doc + runtime;
+  return injectScrollbarStyle(withRuntime);
+}
+
 /**
  * Renders the in-memory playground files in a sandboxed iframe.
  * Inlines styles.css and script.js into index.html so no server is needed.
@@ -44,6 +150,11 @@ export default function PreviewBrowser({ store }: PreviewBrowserProps) {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const srcDoc = useMemo(() => {
+    if (hasJsxFiles(store)) {
+      const reactDoc = buildReactSrcDoc(store);
+      if (reactDoc !== null) return reactDoc;
+    }
+
     const html = store.files[`${CODE_ROOT}/index.html`];
     if (html === undefined) {
       return injectScrollbarStyle(

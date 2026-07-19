@@ -23,12 +23,14 @@ const frameworks = [
     icon: <FaHtml5 className="w-8 h-8 text-primary" />,
     title: 'HTML/CSS',
     description: 'Vanilla HTML/CSS/JS playground',
+    href: '/editor',
   },
   {
     id: 'react',
     icon: <FaReact className="w-8 h-8 text-primary" />,
     title: 'React',
     description: 'React playground using Vite',
+    href: '/editor?template=react',
   },
   {
     id: 'vue',
@@ -102,7 +104,7 @@ export default function PlaygroundCards() {
             icon={framework.icon}
             title={framework.title}
             description={framework.description}
-            href={`/playground/${framework.id}`}
+            href={framework.href ?? `/playground/${framework.id}`}
           />
         ))}
       </div>
