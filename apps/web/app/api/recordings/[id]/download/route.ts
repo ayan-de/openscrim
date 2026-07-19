@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { findOneRecording, getAllEvents } from '@/lib/recordingsService';
-import { writeTantricaBuffer } from '@repo/openscrim-core';
-import type { TantricaFile } from '@repo/openscrim-core';
+import { writeTantricaBuffer } from '@thisisayande/openscrim-core';
+import type { TantricaFile } from '@thisisayande/openscrim-core';
 
 export async function GET(
   _request: Request,

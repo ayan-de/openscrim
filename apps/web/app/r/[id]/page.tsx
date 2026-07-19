@@ -9,7 +9,7 @@ import {
   incrementPlayCount,
   convertApiRecordingToSession,
 } from '@/lib/recordingsApi';
-import type { RecordingSession } from '@repo/openscrim-core';
+import type { RecordingSession } from '@thisisayande/openscrim-core';
 
 export default function RecordingPlayerPage() {
   const params = useParams();

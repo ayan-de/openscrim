@@ -1,17 +1,50 @@
 {
-  "name": "@repo/openscrim-core",
-  "version": "0.0.0",
-  "private": true,
-  "main": "./dist/index.js",
+  "name": "@thisisayande/openscrim-core",
+  "version": "0.1.0",
+  "description": "Framework-agnostic engine for recording and replaying code editor sessions as timestamped events — an open-source Scrimba-style scrim format",
+  "keywords": [
+    "scrimba",
+    "screencast",
+    "code-recording",
+    "playback",
+    "interactive-tutorial",
+    "coding-education",
+    "scrim"
+  ],
+  "license": "MIT",
+  "author": "Ayan De",
+  "homepage": "https://github.com/ayan-de/openscrim#readme",
+  "bugs": "https://github.com/ayan-de/openscrim/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ayan-de/openscrim.git",
+    "directory": "packages/openscrim-core"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "lint": "echo 'No lint configured'",
     "check-types": "tsc --noEmit"
   },
@@ -21,6 +54,10 @@
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@types/node": "^22.15.3",
+    "tsup": "^8.5.0",
     "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

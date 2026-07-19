@@ -1,4 +1,4 @@
-import type { RecordingSession, RecordingEvent } from '@repo/openscrim-core';
+import type { RecordingSession, RecordingEvent } from '@thisisayande/openscrim-core';
 import type { RecordingStorage, RecordingListResult } from './types';
 import { IndexedDBStorageAdapter } from './IndexedDBStorageAdapter';
 import { ApiStorageAdapter } from './ApiStorageAdapter';

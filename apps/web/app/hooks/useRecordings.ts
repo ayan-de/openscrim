@@ -1,10 +1,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { RecordingManager, RecordingState } from '@repo/openscrim-core';
+import { RecordingManager, RecordingState } from '@thisisayande/openscrim-core';
 import type {
   RecordingSessionState,
   RecordingSession,
-} from '@repo/openscrim-core';
-import { MonacoRecorder } from '@repo/openscrim-monaco';
+} from '@thisisayande/openscrim-core';
+import { MonacoRecorder } from '@thisisayande/openscrim-monaco';
 import type * as monacoType from 'monaco-editor';
 import { formatDuration } from '@/lib/formatDuration';
 

@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import type * as monacoType from 'monaco-editor';
 import { useRecording } from '@/hooks/useRecordings';
 import { useLoading } from '@/context/LoadingContext';
-import type { RecordingSession } from '@repo/openscrim-core';
+import type { RecordingSession } from '@thisisayande/openscrim-core';
 import { env } from '@/config/env';
 import { getRecordingStorage } from '@/lib/storage';
 import { useAuth } from '@/hooks/useAuth';

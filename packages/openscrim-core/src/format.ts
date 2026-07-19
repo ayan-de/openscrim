@@ -1,6 +1,5 @@
 import type { RecordingEvent, RecordingSession } from './types.js';
 
-const MAGIC_BYTES = Buffer.from('TNTC', 'ascii');
 const FORMAT_VERSION = 1;
 
 export interface TantricaFile {
@@ -90,7 +89,7 @@ export function writeTantricaBuffer(file: TantricaFile): Buffer {
   headerLen.writeUInt32BE(headerBuf.length, 0);
 
   return Buffer.concat([
-    MAGIC_BYTES,
+    Buffer.from('TNTC', 'ascii'),
     version,
     headerLen,
     headerBuf,
@@ -125,6 +124,13 @@ function gunzipSync(data: Buffer): Buffer {
 }
 
 function requireZlib() {
+  // Node >=20.16 (works in both ESM and CJS)
+  if (
+    typeof process !== 'undefined' &&
+    typeof process.getBuiltinModule === 'function'
+  ) {
+    return process.getBuiltinModule('zlib');
+  }
   if (typeof require !== 'undefined') {
     return require('zlib');
   }

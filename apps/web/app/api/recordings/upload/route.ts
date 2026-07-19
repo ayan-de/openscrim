@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { createRecording } from '@/lib/recordingsService';
-import { readTantricaBuffer } from '@repo/openscrim-core';
-import type { TantricaFile } from '@repo/openscrim-core';
+import { readTantricaBuffer } from '@thisisayande/openscrim-core';
+import type { TantricaFile } from '@thisisayande/openscrim-core';
 
 export async function POST(request: Request) {
   const session = await auth();

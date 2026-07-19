@@ -18,12 +18,12 @@ pnpm build                                # build everything
 pnpm lint                                 # eslint, --max-warnings 0
 pnpm check-types                          # tsc --noEmit in every package
 pnpm format                               # prettier on ts/tsx/md
-pnpm exec turbo <task> --filter=<pkg>     # single package; names: web, @repo/openscrim-core, @repo/openscrim-monaco, @repo/ui, @repo/types
+pnpm exec turbo <task> --filter=<pkg>     # single package; names: web, @thisisayande/openscrim-core, @thisisayande/openscrim-monaco, @repo/ui, @repo/types
 ```
 
 There are no tests anywhere in the repo yet.
 
-`@repo/openscrim-core` resolves via its compiled `dist/` (not source), so after editing `packages/openscrim-core/src/` run `pnpm exec turbo build --filter=@repo/openscrim-core` (or full `pnpm build`) for the web app to pick up changes. Turbo's `dependsOn: ^build` handles this ordering in full builds, but `dev` does not rebuild core.
+`@thisisayande/openscrim-core` resolves via its compiled `dist/` (not source), so after editing `packages/openscrim-core/src/` run `pnpm exec turbo build --filter=@thisisayande/openscrim-core` (or full `pnpm build`) for the web app to pick up changes. Turbo's `dependsOn: ^build` handles this ordering in full builds, but `dev` does not rebuild core.
 
 ## Architecture
 

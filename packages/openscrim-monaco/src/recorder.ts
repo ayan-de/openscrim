@@ -1,5 +1,5 @@
 import type * as monacoType from 'monaco-editor';
-import { RecordingManager } from '@repo/openscrim-core';
+import { RecordingManager } from '@thisisayande/openscrim-core';
 import type {
   Position,
   Range,
@@ -7,7 +7,7 @@ import type {
   RecordingSession,
   RecordingSessionState,
   Selection,
-} from '@repo/openscrim-core';
+} from '@thisisayande/openscrim-core';
 
 export interface MonacoRecorderOptions {
   /** Bring your own manager (e.g. to share one across editors). A new one is created otherwise. */

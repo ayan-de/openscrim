@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
 import { FaCircle, FaPlay, FaStop } from 'react-icons/fa';
-import { MonacoRecorder } from '@repo/openscrim-monaco';
+import { MonacoRecorder } from '@thisisayande/openscrim-monaco';
 import { useAuth } from '@/hooks/useAuth';
 import { useLoading } from '@/context/LoadingContext';
 import { getRecordingStorage } from '@/lib/storage';
 import { formatDuration } from '@/lib/formatDuration';
-import type { RecordingSession } from '@repo/openscrim-core';
+import type { RecordingSession } from '@thisisayande/openscrim-core';
 
 import { getMaterialFileIcon } from 'file-extension-icon-js';
 import FileExplorer from '@/components/playground/FileExplorer';

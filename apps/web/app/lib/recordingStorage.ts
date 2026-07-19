@@ -1,4 +1,4 @@
-import type { RecordingSession } from '@repo/openscrim-core';
+import type { RecordingSession } from '@thisisayande/openscrim-core';
 
 const DB_NAME = 'tantrica_recordings';
 const STORE_NAME = 'recordings';

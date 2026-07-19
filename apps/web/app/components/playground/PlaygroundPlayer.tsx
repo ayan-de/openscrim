@@ -10,16 +10,16 @@ import {
   PlaybackEngine,
   PlaybackState,
   RecordingEventType,
-} from '@repo/openscrim-core';
+} from '@thisisayande/openscrim-core';
 import type {
   FileChangeEvent,
   MousePointerEvent,
   PlaybackEventHandler,
   PlaybackPosition,
   RecordingSession,
-} from '@repo/openscrim-core';
-import { attachPlayback } from '@repo/openscrim-monaco';
-import type { PlaybackAttachment } from '@repo/openscrim-monaco';
+} from '@thisisayande/openscrim-core';
+import { attachPlayback } from '@thisisayande/openscrim-monaco';
+import type { PlaybackAttachment } from '@thisisayande/openscrim-monaco';
 import { useAuth } from '@/hooks/useAuth';
 import { useLoading } from '@/context/LoadingContext';
 import { getRecordingStorage } from '@/lib/storage';

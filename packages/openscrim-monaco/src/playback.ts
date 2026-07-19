@@ -8,7 +8,7 @@ import type {
   PlaybackEventHandler,
   ScrollEvent,
   SelectionChangeEvent,
-} from '@repo/openscrim-core';
+} from '@thisisayande/openscrim-core';
 
 /** Shape of the `data` payload PlaybackEngine emits with `eventProcessed`. */
 export type PlaybackRenderData =

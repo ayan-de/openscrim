@@ -10,8 +10,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { getRecordingStorage } from '@/lib/storage';
 import { formatDuration } from '@/lib/formatDuration';
 import { downloadRecording } from '@/lib/recordingsApi';
-import type { RecordingSession } from '@repo/openscrim-core';
-import { sessionToTantricaFile } from '@repo/openscrim-core';
+import type { RecordingSession } from '@thisisayande/openscrim-core';
+import { sessionToTantricaFile } from '@thisisayande/openscrim-core';
 
 export default function ViewPage() {
   const { showError } = useLoading();

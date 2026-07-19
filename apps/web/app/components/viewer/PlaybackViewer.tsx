@@ -3,14 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
-import { PlaybackEngine, PlaybackState } from '@repo/openscrim-core';
+import { PlaybackEngine, PlaybackState } from '@thisisayande/openscrim-core';
 import type {
   PlaybackPosition,
   PlaybackEventHandler,
   RecordingSession,
-} from '@repo/openscrim-core';
-import { attachPlayback } from '@repo/openscrim-monaco';
-import type { PlaybackAttachment } from '@repo/openscrim-monaco';
+} from '@thisisayande/openscrim-core';
+import { attachPlayback } from '@thisisayande/openscrim-monaco';
+import type { PlaybackAttachment } from '@thisisayande/openscrim-monaco';
 import { GitBranch } from 'lucide-react';
 import type { Fork, ViewerMode } from '@/lib/forkTypes';
 import {
