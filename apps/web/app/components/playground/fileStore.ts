@@ -193,3 +193,20 @@ export function renamePath(
 export function displayPath(path: string): string {
   return path.replace('/home/rdamn/', '~/');
 }
+
+const LANGUAGE_BY_EXT: Record<string, string> = {
+  js: 'javascript',
+  jsx: 'javascript',
+  ts: 'typescript',
+  tsx: 'typescript',
+  css: 'css',
+  html: 'html',
+  htm: 'html',
+  json: 'json',
+  md: 'markdown',
+};
+
+export function languageForPath(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase() ?? '';
+  return LANGUAGE_BY_EXT[ext] ?? 'plaintext';
+}
