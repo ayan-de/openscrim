@@ -1,4 +1,4 @@
-import type { RecordingEvent, RecordingEventType } from './types.js';
+import type { RecordingEvent } from './types.js';
 
 const CURSOR_DEDUP_WINDOW_MS = 50;
 const KEYSTROKE_BATCH_WINDOW_MS = 16;
