@@ -520,7 +520,7 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
 
       <div
         ref={ideAreaRef}
-        className="relative flex flex-row flex-grow min-h-0 bg-background"
+        className="relative flex flex-row flex-grow min-h-0 overflow-hidden bg-background"
       >
         {/* Side menu — plain CSS width animation for a smooth toggle */}
         <div

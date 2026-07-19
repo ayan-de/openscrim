@@ -594,7 +594,7 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
 
       <div
         ref={playAreaRef}
-        className="relative flex flex-row flex-grow min-h-0 bg-background"
+        className="relative flex flex-row flex-grow min-h-0 overflow-hidden bg-background"
       >
         {/* Read-only file sidebar built from the recording's file events */}
         <div className="flex-shrink-0 w-64 border-r border-border bg-sidebar text-sidebar-foreground overflow-y-auto">

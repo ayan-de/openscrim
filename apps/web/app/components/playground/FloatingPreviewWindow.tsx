@@ -19,6 +19,9 @@ const PREVIEW_MIN_W = 256;
 const PREVIEW_MIN_H = 192;
 const PREVIEW_DEFAULT_W = 340;
 const PREVIEW_DEFAULT_H = 420;
+/** How much of the window must stay inside the container while dragging,
+ * so it can slide off-screen (clipped, no scrollbars) but stays grabbable. */
+const PREVIEW_GRAB_MARGIN = 48;
 
 interface FloatingPreviewWindowProps {
   store: PlaygroundFiles;
@@ -91,6 +94,17 @@ export default function FloatingPreviewWindow({
         if (s.mode === 'move') {
           x += dx;
           y += dy;
+          const container = containerRef.current;
+          if (container) {
+            x = Math.max(
+              PREVIEW_GRAB_MARGIN - w,
+              Math.min(x, container.clientWidth - PREVIEW_GRAB_MARGIN)
+            );
+            y = Math.max(
+              0,
+              Math.min(y, container.clientHeight - PREVIEW_GRAB_MARGIN)
+            );
+          }
         } else {
           if (s.mode.includes('e')) w = Math.max(PREVIEW_MIN_W, s.base.w + dx);
           if (s.mode.includes('s')) h = Math.max(PREVIEW_MIN_H, s.base.h + dy);
