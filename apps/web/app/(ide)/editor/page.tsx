@@ -15,8 +15,8 @@ import type { RecordingSession } from '@repo/openscrim-core';
 
 import { getMaterialFileIcon } from 'file-extension-icon-js';
 import FileExplorer from '@/components/playground/FileExplorer';
+import FloatingPreviewWindow from '@/components/playground/FloatingPreviewWindow';
 import PlaygroundPlayer from '@/components/playground/PlaygroundPlayer';
-import PreviewBrowser from '@/components/playground/PreviewBrowser';
 import TerminalPane from '@/components/playground/TerminalPane';
 
 import {
@@ -73,99 +73,7 @@ function PlaygroundEditor() {
   const toggleTerminal = () => setIsTerminalOpen((open) => !open);
   const togglePreview = () => setIsPreviewOpen((open) => !open);
 
-  type PreviewInteraction =
-    | 'move'
-    | 'n'
-    | 's'
-    | 'e'
-    | 'w'
-    | 'ne'
-    | 'nw'
-    | 'se'
-    | 'sw';
-
-  const PREVIEW_MIN_W = 256;
-  const PREVIEW_MIN_H = 192;
-  const PREVIEW_DEFAULT_W = 340;
-  const PREVIEW_DEFAULT_H = 420;
-
   const ideAreaRef = useRef<HTMLDivElement>(null);
-  const [previewRect, setPreviewRect] = useState<{
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-  } | null>(null);
-  const [isPreviewInteracting, setIsPreviewInteracting] = useState(false);
-  const previewInteractionRef = useRef<{
-    mode: PreviewInteraction;
-    startX: number;
-    startY: number;
-    base: { x: number; y: number; w: number; h: number };
-  } | null>(null);
-
-  // Place the window bottom-right once the IDE area has a measurable size
-  useEffect(() => {
-    const el = ideAreaRef.current;
-    if (!el) return;
-    setPreviewRect(
-      (prev) =>
-        prev ?? {
-          x: Math.max(el.clientWidth - PREVIEW_DEFAULT_W - 24, 16),
-          y: Math.max(el.clientHeight - PREVIEW_DEFAULT_H - 24, 16),
-          w: PREVIEW_DEFAULT_W,
-          h: PREVIEW_DEFAULT_H,
-        }
-    );
-  }, []);
-
-  const startPreviewInteraction =
-    (mode: PreviewInteraction) => (e: React.PointerEvent) => {
-      if (!previewRect) return;
-      e.preventDefault();
-      e.stopPropagation();
-      previewInteractionRef.current = {
-        mode,
-        startX: e.clientX,
-        startY: e.clientY,
-        base: previewRect,
-      };
-      setIsPreviewInteracting(true);
-
-      const onMove = (ev: PointerEvent) => {
-        const s = previewInteractionRef.current;
-        if (!s) return;
-        const dx = ev.clientX - s.startX;
-        const dy = ev.clientY - s.startY;
-        let { x, y, w, h } = s.base;
-
-        if (s.mode === 'move') {
-          x += dx;
-          y += dy;
-        } else {
-          if (s.mode.includes('e')) w = Math.max(PREVIEW_MIN_W, s.base.w + dx);
-          if (s.mode.includes('s')) h = Math.max(PREVIEW_MIN_H, s.base.h + dy);
-          if (s.mode.includes('w')) {
-            w = Math.max(PREVIEW_MIN_W, s.base.w - dx);
-            x = s.base.x + (s.base.w - w);
-          }
-          if (s.mode.includes('n')) {
-            h = Math.max(PREVIEW_MIN_H, s.base.h - dy);
-            y = s.base.y + (s.base.h - h);
-          }
-        }
-
-        setPreviewRect({ x, y, w, h });
-      };
-      const onUp = () => {
-        previewInteractionRef.current = null;
-        setIsPreviewInteracting(false);
-        window.removeEventListener('pointermove', onMove);
-        window.removeEventListener('pointerup', onUp);
-      };
-      window.addEventListener('pointermove', onMove);
-      window.addEventListener('pointerup', onUp);
-    };
 
   const [editorOptions, setEditorOptions] =
     useState<monacoType.editor.IStandaloneEditorConstructionOptions>({
@@ -803,95 +711,12 @@ function PlaygroundEditor() {
           </div>
         </div>
 
-        {/* Preview — floating window, draggable + resizable from all edges/corners */}
-        <div
-          className={`absolute z-30 flex flex-col rounded-lg border border-border bg-background shadow-2xl transition-opacity duration-200 ${
-            isPreviewOpen && previewRect
-              ? 'opacity-100'
-              : 'opacity-0 pointer-events-none'
-          }`}
-          style={
-            previewRect
-              ? {
-                  left: previewRect.x,
-                  top: previewRect.y,
-                  width: previewRect.w,
-                  height: previewRect.h,
-                }
-              : undefined
-          }
-        >
-          {/* Edge handles */}
-          <div
-            onPointerDown={startPreviewInteraction('n')}
-            className="absolute -top-1 left-2 right-2 h-2 cursor-ns-resize z-10"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('s')}
-            className="absolute -bottom-1 left-2 right-2 h-2 cursor-ns-resize z-10"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('w')}
-            className="absolute -left-1 top-2 bottom-2 w-2 cursor-ew-resize z-10"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('e')}
-            className="absolute -right-1 top-2 bottom-2 w-2 cursor-ew-resize z-10"
-          />
-          {/* Corner handles */}
-          <div
-            onPointerDown={startPreviewInteraction('nw')}
-            className="absolute -top-1 -left-1 w-3.5 h-3.5 cursor-nwse-resize z-20"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('ne')}
-            className="absolute -top-1 -right-1 w-3.5 h-3.5 cursor-nesw-resize z-20"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('sw')}
-            className="absolute -bottom-1 -left-1 w-3.5 h-3.5 cursor-nesw-resize z-20"
-          />
-          <div
-            onPointerDown={startPreviewInteraction('se')}
-            className="absolute -bottom-1 -right-1 w-3.5 h-3.5 cursor-nwse-resize z-20"
-          />
-
-          <div
-            onPointerDown={startPreviewInteraction('move')}
-            className="flex items-center justify-between px-3 py-1.5 bg-sidebar border-b border-border cursor-move select-none flex-shrink-0 rounded-t-lg"
-          >
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Preview
-            </span>
-            <button
-              onClick={togglePreview}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-accent cursor-pointer"
-              title="Close Preview"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-          <div
-            className={`flex-grow min-h-0 overflow-hidden rounded-b-lg ${
-              isPreviewInteracting ? 'pointer-events-none' : ''
-            }`}
-          >
-            <PreviewBrowser store={store} />
-          </div>
-        </div>
+        <FloatingPreviewWindow
+          store={store}
+          open={isPreviewOpen}
+          onClose={togglePreview}
+          containerRef={ideAreaRef}
+        />
       </div>
     </div>
   );
