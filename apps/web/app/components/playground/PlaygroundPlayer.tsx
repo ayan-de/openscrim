@@ -274,6 +274,11 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
   };
 
   const handleTogglePlay = () => {
+    // While forking, play means: save the fork and resume playback from it
+    if (isForking) {
+      void handleReturnToPlayback();
+      return;
+    }
     const engine = ensureEngine();
     if (playbackState === PlaybackState.PLAYING) engine.pause();
     else engine.play();
@@ -652,29 +657,6 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
               })}
           </div>
 
-          {/* Fork banner */}
-          {isForking && (
-            <div className="flex items-center justify-between px-4 py-1.5 bg-primary/10 border-b border-primary/30 flex-shrink-0">
-              <div className="flex items-center gap-2 text-xs">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-foreground">
-                  Editing fork at{' '}
-                  {formatDuration(
-                    forks.find((f) => f.id === activeForkId)?.timestamp ?? 0,
-                    'timer'
-                  )}{' '}
-                  — changes save automatically
-                </span>
-              </div>
-              <button
-                onClick={handleReturnToPlayback}
-                className="px-3 py-1 rounded bg-primary text-primary-foreground text-xs font-bold tracking-wider hover:bg-primary/90 transition-colors cursor-pointer"
-              >
-                RETURN TO PLAYBACK
-              </button>
-            </div>
-          )}
-
           {/* Monaco — driven by attachPlayback, editable only while forking */}
           <div
             className={`flex-grow min-h-0 bg-background ${
@@ -738,17 +720,17 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
 
         {/* Floating video-style control bar */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[min(760px,92%)] z-40">
-          <div
-            className={`flex items-center gap-3 rounded-xl border border-border bg-sidebar/95 backdrop-blur px-4 py-2.5 shadow-2xl transition-opacity ${
-              isForking ? 'opacity-40 pointer-events-none' : 'opacity-100'
-            }`}
-          >
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-sidebar/95 backdrop-blur px-4 py-2.5 shadow-2xl">
             <button
               onClick={handleTogglePlay}
               disabled={!session}
               className="flex items-center justify-center w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 flex-shrink-0"
               title={
-                playbackState === PlaybackState.PLAYING ? 'Pause' : 'Play'
+                isForking
+                  ? 'Return to playback'
+                  : playbackState === PlaybackState.PLAYING
+                    ? 'Pause'
+                    : 'Play'
               }
             >
               {playbackState === PlaybackState.PLAYING ? (
@@ -759,7 +741,7 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
             </button>
             <button
               onClick={handleRestart}
-              disabled={!session}
+              disabled={!session || isForking}
               className="flex items-center justify-center w-7 h-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer disabled:opacity-50 flex-shrink-0"
               title="Restart"
             >
@@ -780,8 +762,8 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
                 step="0.1"
                 value={position.progress * 100}
                 onChange={handleTimelineChange}
-                disabled={!session}
-                className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer playground-scrubber"
+                disabled={!session || isForking}
+                className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer playground-scrubber disabled:opacity-50 disabled:cursor-default"
               />
               {position.totalTime > 0 &&
                 forks.map((fork) => (
@@ -800,7 +782,7 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
             <select
               value={speed}
               onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
-              disabled={!session}
+              disabled={!session || isForking}
               className="bg-transparent border border-border rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer flex-shrink-0"
               title="Playback speed"
             >
@@ -815,7 +797,7 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
               <div className="flex items-center">
                 <button
                   onClick={handleCreateFork}
-                  disabled={!session}
+                  disabled={!session || isForking}
                   className="flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-l bg-accent text-accent-foreground text-[11px] font-bold tracking-wider hover:bg-accent/80 transition-colors cursor-pointer disabled:opacity-50"
                   title="Pause and edit the code at this point"
                 >
