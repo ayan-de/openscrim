@@ -270,6 +270,22 @@ export class RecordingManager {
     this.addEvent(event);
   }
 
+  recordPointer(kind: 'move' | 'click', x: number, y: number): void {
+    if (!this.isRecording() || !this.config.capturePointer) return;
+
+    const event: RecordingEvent = {
+      id: uuidv4(),
+      type: RecordingEventType.POINTER,
+      timestamp: Date.now(),
+      sessionId: this.sessionState.sessionId!,
+      kind,
+      x,
+      y,
+    };
+
+    this.addEvent(event);
+  }
+
   recordFileChange(
     path: string,
     options: {

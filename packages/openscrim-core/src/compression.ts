@@ -24,6 +24,18 @@ export function compressEvents(events: RecordingEvent[]): RecordingEvent[] {
       continue;
     }
 
+    if (event.type === 'pointer' && event.kind === 'move') {
+      const batch = takeWhile(
+        events,
+        i,
+        (e) => e.type === 'pointer' && e.kind === 'move',
+        CURSOR_DEDUP_WINDOW_MS
+      );
+      result.push(batch[batch.length - 1]!);
+      i += batch.length;
+      continue;
+    }
+
     if (event.type === 'scroll') {
       const batch = takeWhile(
         events,

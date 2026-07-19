@@ -425,6 +425,10 @@ export class PlaybackEngine {
           this.emit('eventProcessed', { type: 'scroll', event });
           break;
 
+        case RecordingEventType.POINTER:
+          this.emit('eventProcessed', { type: 'pointer', event });
+          break;
+
         case RecordingEventType.CURSOR_POSITION:
           this.emit('eventProcessed', {
             type: 'cursorPosition',

@@ -13,6 +13,7 @@ import {
 } from '@repo/openscrim-core';
 import type {
   FileChangeEvent,
+  MousePointerEvent,
   PlaybackEventHandler,
   PlaybackPosition,
   RecordingSession,
@@ -86,6 +87,12 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
     dirs: [CODE_ROOT],
   });
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
+  /** The author's mouse, replayed as an overlay; clickAt keys the ripple */
+  const [pointer, setPointer] = useState<{
+    x: number;
+    y: number;
+    clickAt: number;
+  } | null>(null);
   const activeFileRef = useRef<string | null>(null);
   const playAreaRef = useRef<HTMLDivElement>(null);
 
@@ -141,6 +148,15 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
               const content = event.content;
               setPlayFiles((prev) => updateFile(prev, event.path, content));
             }
+          }
+          if (data.type === 'pointer') {
+            const event = data.event as MousePointerEvent;
+            setPointer((prev) => ({
+              x: event.x,
+              y: event.y,
+              clickAt:
+                event.kind === 'click' ? event.timestamp : (prev?.clickAt ?? 0),
+            }));
           }
           break;
         case 'error':
@@ -684,6 +700,34 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
           </div>
         </div>
 
+        {/* The author's mouse pointer, replayed */}
+        {pointer && !isForking && (
+          <div
+            className="absolute z-50 pointer-events-none transition-[left,top] duration-100 ease-linear"
+            style={{
+              left: `${pointer.x * 100}%`,
+              top: `${pointer.y * 100}%`,
+            }}
+          >
+            {pointer.clickAt > 0 && (
+              <span
+                key={pointer.clickAt}
+                className="playback-click absolute -left-2 -top-2 w-6 h-6 rounded-full bg-primary/60"
+              />
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/cursor.svg"
+              alt=""
+              width={20}
+              height={20}
+              style={{
+                filter: 'invert(1) drop-shadow(0 1px 2px rgba(0,0,0,0.7))',
+              }}
+            />
+          </div>
+        )}
+
         {/* Browser preview — live output of the played-back (or forked) code */}
         <FloatingPreviewWindow
           store={playFiles}
@@ -832,6 +876,19 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
 
       {/* eslint-disable-next-line react/no-unknown-property */}
       <style jsx>{`
+        .playback-click {
+          animation: playback-click 0.45s ease-out forwards;
+        }
+        @keyframes playback-click {
+          0% {
+            transform: scale(0.4);
+            opacity: 0.9;
+          }
+          100% {
+            transform: scale(2.2);
+            opacity: 0;
+          }
+        }
         .playground-scrubber::-webkit-slider-thumb {
           appearance: none;
           height: 14px;

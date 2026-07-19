@@ -117,6 +117,50 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
     };
   }, []);
 
+  // Track the author's mouse across the whole IDE while recording —
+  // normalized to the IDE area so playback can overlay a pointer anywhere.
+  useEffect(() => {
+    if (!isRecording) return;
+    const area = ideAreaRef.current;
+    const manager = recorderRef.current?.getManager();
+    if (!area || !manager) return;
+
+    let pending: { x: number; y: number } | null = null;
+    let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const normalize = (e: MouseEvent) => {
+      const rect = area.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return null;
+      return {
+        x: Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1),
+        y: Math.min(Math.max((e.clientY - rect.top) / rect.height, 0), 1),
+      };
+    };
+
+    const onMove = (e: MouseEvent) => {
+      pending = normalize(e);
+      if (flushTimer) return;
+      flushTimer = setTimeout(() => {
+        flushTimer = null;
+        if (pending) manager.recordPointer('move', pending.x, pending.y);
+        pending = null;
+      }, 80);
+    };
+    const onMouseDown = (e: MouseEvent) => {
+      const p = normalize(e);
+      if (p) manager.recordPointer('click', p.x, p.y);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    // Capture phase so clicks swallowed by Monaco/menus are still recorded
+    document.addEventListener('mousedown', onMouseDown, true);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mousedown', onMouseDown, true);
+      if (flushTimer) clearTimeout(flushTimer);
+    };
+  }, [isRecording]);
+
   // Fetch the recording list fresh each time the dropdown opens
   useEffect(() => {
     if (!showPlays) return;

@@ -24,6 +24,7 @@ export enum RecordingEventType {
   CONTENT_CHANGE = 'content_change',
   FILE_CHANGE = 'file_change',
   SCROLL = 'scroll',
+  POINTER = 'pointer',
   EDITOR_FOCUS = 'editor_focus',
   EDITOR_BLUR = 'editor_blur',
   LANGUAGE_CHANGE = 'language_change',
@@ -97,6 +98,18 @@ export interface ScrollEvent extends BaseRecordingEvent {
   scrollLeft: number;
 }
 
+/**
+ * The author's mouse pointer, tracked across the whole workspace (explorer,
+ * tabs, editor…). Coordinates are normalized (0..1) to the tracked area so
+ * playback works at any viewport size.
+ */
+export interface MousePointerEvent extends BaseRecordingEvent {
+  type: RecordingEventType.POINTER;
+  kind: 'move' | 'click';
+  x: number;
+  y: number;
+}
+
 export interface EditorFocusEvent extends BaseRecordingEvent {
   type: RecordingEventType.EDITOR_FOCUS;
 }
@@ -126,6 +139,7 @@ export type RecordingEvent =
   | ContentChangeEvent
   | FileChangeEvent
   | ScrollEvent
+  | MousePointerEvent
   | EditorFocusEvent
   | EditorBlurEvent
   | LanguageChangeEvent
@@ -180,6 +194,7 @@ export interface RecordingConfig {
   captureContentChanges: boolean;
   captureFileChanges: boolean;
   captureScroll: boolean;
+  capturePointer: boolean;
   captureEditorEvents: boolean;
   debounceDelay: number;
   compressionEnabled: boolean;
@@ -193,6 +208,7 @@ export const DEFAULT_RECORDING_CONFIG: RecordingConfig = {
   captureContentChanges: true,
   captureFileChanges: true,
   captureScroll: true,
+  capturePointer: true,
   captureEditorEvents: true,
   debounceDelay: 50,
   compressionEnabled: true,

@@ -9,6 +9,7 @@ export type {
   ContentChangeEvent,
   FileChangeEvent,
   ScrollEvent,
+  MousePointerEvent,
   EditorFocusEvent,
   EditorBlurEvent,
   LanguageChangeEvent,
