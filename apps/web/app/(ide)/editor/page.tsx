@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
-import { FaCircle, FaPlay, FaStop } from 'react-icons/fa';
+import { FaCircle, FaStop } from 'react-icons/fa';
 import { MonacoRecorder } from '@repo/openscrim-monaco';
 import { useAuth } from '@/hooks/useAuth';
 import { useLoading } from '@/context/LoadingContext';
@@ -345,6 +345,7 @@ export default function EditorPage() {
           )}
           <button
             onClick={handleToggleRecording}
+            title={isRecording ? 'Stop recording' : 'Start recording'}
             className={`flex items-center gap-1.5 px-4 py-1 rounded text-[11px] font-bold tracking-wider transition-colors cursor-pointer shadow-sm ${
               isRecording
                 ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground'
@@ -358,8 +359,8 @@ export default function EditorPage() {
               </>
             ) : (
               <>
-                <FaPlay className="text-[9px]" />
-                RUN
+                <FaCircle className="text-[9px]" />
+                RECORD
               </>
             )}
           </button>
