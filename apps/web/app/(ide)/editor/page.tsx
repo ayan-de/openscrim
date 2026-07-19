@@ -33,10 +33,19 @@ type SideMenuTab = 'about' | 'explorer' | 'settings';
 export default function EditorPage() {
   const [store, setStore] = useState<PlaygroundFiles>(STARTER_FILES);
   const [openDirs, setOpenDirs] = useState<Set<string>>(new Set([CODE_ROOT]));
-  const [, setOpenFiles] = useState<string[]>([`${CODE_ROOT}/index.html`]);
+  const [openFiles, setOpenFiles] = useState<string[]>([
+    `${CODE_ROOT}/index.html`,
+  ]);
+  /** File opened by single click — shown as one italic tab that the next single click replaces */
+  const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [activeFile, setActiveFile] = useState<string | null>(
     `${CODE_ROOT}/index.html`
   );
+
+  const openTabs =
+    previewFile && !openFiles.includes(previewFile)
+      ? [...openFiles, previewFile]
+      : openFiles;
   const [sideMenuSelectedTab] = useState<SideMenuTab>('explorer');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
@@ -222,8 +231,24 @@ export default function EditorPage() {
   };
 
   const handleOpenFile = (path: string) => {
-    setOpenFiles((prev) => (prev.includes(path) ? prev : [...prev, path]));
+    if (!openFiles.includes(path)) setPreviewFile(path);
     setActiveFile(path);
+  };
+
+  const handlePinFile = (path: string) => {
+    setOpenFiles((prev) => (prev.includes(path) ? prev : [...prev, path]));
+    setPreviewFile((prev) => (prev === path ? null : prev));
+    setActiveFile(path);
+  };
+
+  const handleCloseFile = (path: string) => {
+    const index = openTabs.indexOf(path);
+    const next = openTabs.filter((p) => p !== path);
+    setOpenFiles((prev) => prev.filter((p) => p !== path));
+    setPreviewFile((prev) => (prev === path ? null : prev));
+    if (activeFile === path) {
+      setActiveFile(next[Math.min(index, next.length - 1)] ?? null);
+    }
   };
 
   const handleCreate = (
@@ -234,7 +259,7 @@ export default function EditorPage() {
     const path = `${dirPath}/${name}`;
     if (type === 'file') {
       setStore((prev) => createFile(prev, path));
-      handleOpenFile(path);
+      handlePinFile(path);
     } else {
       setStore((prev) => createDir(prev, path));
       setOpenDirs((prev) => new Set(prev).add(path));
@@ -246,22 +271,20 @@ export default function EditorPage() {
     setStore(nextStore);
     const remap = (p: string) => moved.find(([from]) => from === p)?.[1] ?? p;
     setOpenFiles((prev) => prev.map(remap));
+    setPreviewFile((prev) => (prev ? remap(prev) : prev));
     setActiveFile((prev) => (prev ? remap(prev) : prev));
     setOpenDirs((prev) => new Set([...prev].map(remap)));
   };
 
   const handleDelete = (path: string) => {
     setStore((prev) => deletePath(prev, path));
-    setOpenFiles((prev) => {
-      const next = prev.filter((p) => p !== path && !p.startsWith(path + '/'));
-      if (
-        activeFile &&
-        (activeFile === path || activeFile.startsWith(path + '/'))
-      ) {
-        setActiveFile(next.length > 0 ? (next[next.length - 1] ?? null) : null);
-      }
-      return next;
-    });
+    const isGone = (p: string) => p === path || p.startsWith(path + '/');
+    const nextTabs = openTabs.filter((p) => !isGone(p));
+    setOpenFiles((prev) => prev.filter((p) => !isGone(p)));
+    setPreviewFile((prev) => (prev && isGone(prev) ? null : prev));
+    if (activeFile && isGone(activeFile)) {
+      setActiveFile(nextTabs[nextTabs.length - 1] ?? null);
+    }
   };
 
   return (
@@ -428,6 +451,7 @@ export default function EditorPage() {
                 activeFile={activeFile}
                 onToggleDir={handleToggleDir}
                 onOpenFile={handleOpenFile}
+                onPinFile={handlePinFile}
                 onCreate={handleCreate}
                 onRename={handleRename}
                 onDelete={handleDelete}
@@ -538,54 +562,72 @@ export default function EditorPage() {
         {/* Editor */}
         <div className="flex-grow min-w-0">
           <div className="h-full flex flex-col bg-background">
-            {/* Minimal Tab */}
-            <div className="flex items-center justify-between px-4 py-2 bg-background border-b border-border flex-shrink-0">
-              <div className="flex items-center gap-2 text-sm text-foreground">
-                {activeFile && (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getMaterialFileIcon(
-                        activeFile.split('/').pop() ?? ''
-                      )}
-                      alt={activeFile}
-                      width={16}
-                      height={16}
-                      className="opacity-90"
-                    />
-                    <span className="font-semibold tracking-wide text-[13px]">
-                      {activeFile.split('/').pop()}
-                    </span>
-                    <button
-                      className="ml-2 text-muted-foreground hover:text-foreground opacity-60 hover:opacity-100 transition-opacity"
-                      title="Copy file path"
+            {/* Tabs */}
+            <div className="flex items-center justify-between bg-background border-b border-border flex-shrink-0">
+              <div className="flex items-center overflow-x-auto min-w-0">
+                {openTabs.map((path) => {
+                  const name = path.split('/').pop() ?? path;
+                  const isActive = path === activeFile;
+                  const isPreview = path === previewFile;
+                  return (
+                    <div
+                      key={path}
+                      onClick={() => setActiveFile(path)}
+                      onDoubleClick={() => handlePinFile(path)}
+                      title={path}
+                      className={`group flex items-center gap-2 px-3 py-2 text-sm border-r border-border cursor-pointer select-none whitespace-nowrap transition-colors ${
+                        isActive
+                          ? 'bg-background text-foreground shadow-[inset_0_-2px_0_0] shadow-primary'
+                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                      }`}
                     >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getMaterialFileIcon(name)}
+                        alt={name}
+                        width={16}
+                        height={16}
+                        className="opacity-90"
+                      />
+                      <span
+                        className={`font-semibold tracking-wide text-[13px] ${
+                          isPreview ? 'italic' : ''
+                        }`}
                       >
-                        <rect
-                          x="9"
-                          y="9"
-                          width="13"
-                          height="13"
-                          rx="2"
-                          ry="2"
-                        ></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                      </svg>
-                    </button>
-                  </>
-                )}
+                        {name}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCloseFile(path);
+                        }}
+                        className={`rounded p-0.5 hover:bg-accent hover:text-accent-foreground transition-opacity ${
+                          isActive
+                            ? 'opacity-60 hover:opacity-100'
+                            : 'opacity-0 group-hover:opacity-60 hover:!opacity-100'
+                        }`}
+                        title={`Close ${name}`}
+                      >
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
               {activeFile && (
-                <div className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest opacity-60">
+                <div className="px-4 text-[10px] uppercase font-bold text-muted-foreground tracking-widest opacity-60 whitespace-nowrap">
                   CTRL+S TO SAVE
                 </div>
               )}
@@ -602,6 +644,8 @@ export default function EditorPage() {
                     setStore((prev) =>
                       updateFile(prev, activeFile, newValue ?? '')
                     );
+                    // Editing a preview tab pins it, like VS Code
+                    if (activeFile === previewFile) handlePinFile(activeFile);
                   }}
                   onMount={handleEditorMount}
                   theme="vs-dark"

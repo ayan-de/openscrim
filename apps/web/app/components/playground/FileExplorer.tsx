@@ -11,6 +11,8 @@ interface FileExplorerProps {
   activeFile: string | null;
   onToggleDir: (path: string) => void;
   onOpenFile: (path: string) => void;
+  /** Double click — open the file as a permanent (non-preview) tab */
+  onPinFile: (path: string) => void;
   onCreate: (dirPath: string, name: string, type: 'file' | 'directory') => void;
   onRename: (path: string, newName: string) => void;
   onDelete: (path: string) => void;
@@ -33,6 +35,7 @@ export default function FileExplorer({
   activeFile,
   onToggleDir,
   onOpenFile,
+  onPinFile,
   onCreate,
   onRename,
   onDelete,
@@ -181,6 +184,7 @@ export default function FileExplorer({
         }`}
         style={{ paddingLeft: `${depth * 12 - 4}px` }}
         onClick={() => onOpenFile(node.path)}
+        onDoubleClick={() => onPinFile(node.path)}
         onContextMenu={(e) => {
           e.preventDefault();
           e.stopPropagation();
