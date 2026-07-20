@@ -2,7 +2,14 @@ export { ScrimRecorder } from './ScrimRecorder.js';
 export type { ScrimRecorderProps } from './ScrimRecorder.js';
 
 export { ScrimPlayer } from './ScrimPlayer.js';
-export type { ScrimPlayerProps, PlayerFiles } from './ScrimPlayer.js';
+export type {
+  ScrimPlayerProps,
+  PlayerFiles,
+  ScrimForkMarker,
+  ScrimForkDraft,
+  ScrimForkEdits,
+  ScrimForkContent,
+} from './ScrimPlayer.js';
 
 export { FileTree } from './FileTree.js';
 export type { FileTreeProps } from './FileTree.js';

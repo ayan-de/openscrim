@@ -3,6 +3,7 @@ import {
   type ReactNode,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { Editor } from '@monaco-editor/react';
@@ -20,7 +21,7 @@ import type {
   TantricaFile,
 } from '@thisisayande/openscrim-core';
 import { usePlayer, type UsePlayerResult } from './usePlayer.js';
-import { buildFileTree } from './file-tree.js';
+import { buildFileTree, languageForPath } from './file-tree.js';
 import { FileTree } from './FileTree.js';
 import { injectStyles, resolveTheme, type ThemeInput } from './styles.js';
 
@@ -42,6 +43,45 @@ const PauseIcon = () => (
   </svg>
 );
 
+interface CursorPos {
+  lineNumber: number;
+  column: number;
+}
+
+/** A fork's position on the timeline — the minimum the player needs to render it. */
+export interface ScrimForkMarker {
+  id: string;
+  timestamp: number;
+  label?: string;
+}
+
+/** Snapshot captured when the viewer creates a fork; persist and return a marker. */
+export interface ScrimForkDraft {
+  timestamp: number;
+  content: string;
+  language: string;
+  cursor: CursorPos;
+  files: Record<string, string>;
+  activePath: string | null;
+}
+
+/** Debounced edits to an open fork. */
+export interface ScrimForkEdits {
+  content: string;
+  cursor: CursorPos;
+  files: Record<string, string>;
+  activePath: string | null;
+}
+
+/** Stored fork content the player loads when a fork is opened. */
+export interface ScrimForkContent {
+  content: string;
+  language?: string;
+  cursor?: CursorPos;
+  files?: Record<string, string>;
+  activePath?: string | null;
+}
+
 /** Live file contents reconstructed from playback, for the preview slot. */
 export interface PlayerFiles {
   files: Record<string, string>;
@@ -60,12 +100,25 @@ export interface ScrimPlayerProps {
   /** Override the Monaco theme id (defaults from `theme`'s base). */
   monacoTheme?: string;
   height?: string | number;
-  /** Allow editing the instructor's code while paused. Default true. */
+  /** Allow editing while paused (ignored when fork callbacks are provided). Default true. */
   editWhilePaused?: boolean;
   controls?: boolean;
   pointer?: boolean;
   /** Show the file sidebar. Default: auto (on when the recording has >1 file). */
   sidebar?: boolean;
+
+  // --- Forking (all optional; storage stays with you) ---
+  /** Existing forks to render as scrubber markers. */
+  forks?: ScrimForkMarker[];
+  /** Persist a new fork captured at the current time; return its marker (with id). */
+  onCreateFork?: (draft: ScrimForkDraft) => ScrimForkMarker | Promise<ScrimForkMarker>;
+  /** Persist edits to the open fork (debounced while editing). */
+  onSaveFork?: (id: string, edits: ScrimForkEdits) => void;
+  /** Load an existing fork's stored content. */
+  onOpenFork?: (id: string) => ScrimForkContent | Promise<ScrimForkContent>;
+  /** Remove a fork. */
+  onDeleteFork?: (id: string) => void;
+
   /** Render a live preview pane; receives the reconstructed file contents. */
   renderPreview?: (files: PlayerFiles) => ReactNode;
   /** Full-control escape hatch: replace the built-in transport with your own. */
@@ -114,10 +167,10 @@ function useResolvedSession(
 }
 
 /**
- * Batteries-included, themeable playback surface: a file sidebar, tabs, a
- * read-only Monaco editor that replays the recording, a transport bar, and a
- * pointer overlay. Multi-file recordings get a tree + tabs automatically; a
- * live preview can be slotted in via `renderPreview`.
+ * Batteries-included, themeable playback surface: file sidebar, tabs, a Monaco
+ * editor that replays the recording, a transport bar, and a pointer overlay.
+ * When fork callbacks are supplied, viewers can branch the instructor's code
+ * at any point — the player owns the fork *mode* and UI; you own persistence.
  */
 export function ScrimPlayer(props: ScrimPlayerProps) {
   const {
@@ -130,11 +183,18 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     controls = true,
     pointer = true,
     sidebar,
+    forks = [],
+    onCreateFork,
+    onSaveFork,
+    onOpenFork,
+    onDeleteFork,
     renderPreview,
     children,
     className,
     style,
   } = props;
+
+  const forkEnabled = !!onCreateFork;
 
   useEffect(() => {
     if (typeof document !== 'undefined') injectStyles(document);
@@ -146,12 +206,32 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
   const [seenFiles, setSeenFiles] = useState<string[]>([]);
   const [files, setFiles] = useState<Record<string, string>>({});
   const [dot, setDot] = useState<MousePointerEvent | null>(null);
+  const [forkMode, setForkMode] = useState(false);
+  const [activeForkId, setActiveForkId] = useState<string | null>(null);
+  const [showForkList, setShowForkList] = useState(false);
+
+  // Refs for event handlers / timers that must read the latest value.
+  const activeFileRef = useRef<string | null>(null);
+  const filesRef = useRef<Record<string, string>>({});
+  const activeForkIdRef = useRef<string | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const forkListRef = useRef<HTMLDivElement>(null);
+  activeFileRef.current = activeFile;
+  filesRef.current = files;
+  activeForkIdRef.current = activeForkId;
+
+  const onSaveForkRef = useRef(onSaveFork);
+  const onOpenForkRef = useRef(onOpenFork);
+  onSaveForkRef.current = onSaveFork;
+  onOpenForkRef.current = onOpenFork;
 
   // Reset per-recording view state and seed the file store with the snapshot.
   useEffect(() => {
     setActiveFile(null);
     setSeenFiles([]);
     setDot(null);
+    setForkMode(false);
+    setActiveForkId(null);
     setFiles(session?.files ? { ...session.files } : {});
   }, [session]);
 
@@ -159,9 +239,12 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     session,
     autoplay,
     speed,
-    editWhilePaused,
+    // The component owns readOnly (fork mode / edit-while-paused), so the hook
+    // must not toggle it on pause.
+    editWhilePaused: false,
     onPointer: pointer ? setDot : undefined,
     onFileChange: (event) => {
+      if (forkMode) return; // playback is paused during a fork
       setActiveFile(event.path);
       setSeenFiles((prev) => (prev.includes(event.path) ? prev : [...prev, event.path]));
       if (event.content !== undefined) {
@@ -170,10 +253,8 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
       }
     },
     onContentRendered: (content) => {
-      setActiveFile((path) => {
-        if (path) setFiles((prev) => ({ ...prev, [path]: content }));
-        return path;
-      });
+      const path = activeFileRef.current;
+      if (path) setFiles((prev) => ({ ...prev, [path]: content }));
     },
   });
   const { position, state, isPlaying, play, pause, seek, setSpeed } = player;
@@ -200,11 +281,156 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
 
   const showSidebar = sidebar ?? allPaths.length > 1;
   const tabs = seenFiles.length > 0 ? seenFiles : activeFile ? [activeFile] : [];
+  const editable = forkEnabled ? forkMode : editWhilePaused && state !== PlaybackState.PLAYING;
+
+  /** Latest content for a file: live store, else its first recorded snapshot. */
+  const contentForFile = (path: string): string => {
+    const known = filesRef.current[path];
+    if (known !== undefined) return known;
+    const first = session?.events.find(
+      (e) => e.type === RecordingEventType.FILE_CHANGE && (e as FileChangeEvent).path === path
+    ) as FileChangeEvent | undefined;
+    return first?.content ?? '';
+  };
 
   const selectFile = (path: string) => {
+    if (forkMode) {
+      const editor = player.getEditor();
+      const model = editor?.getModel();
+      if (!editor || !model || path === activeFileRef.current) return;
+      setActiveFile(path);
+      setSeenFiles((prev) => (prev.includes(path) ? prev : [...prev, path]));
+      model.setValue(contentForFile(path));
+      player.getMonaco()?.editor.setModelLanguage(model, languageForPath(path));
+      return;
+    }
     const at = firstAppearance.get(path);
     if (at !== undefined) seek(at);
   };
+
+  const handleCreateFork = async () => {
+    const editor = player.getEditor();
+    if (!editor || !onCreateFork || forkMode) return;
+    pause();
+    const model = editor.getModel();
+    const cur = editor.getPosition();
+    const draft: ScrimForkDraft = {
+      timestamp: position.currentTime,
+      content: model?.getValue() ?? session?.initialContent ?? '',
+      language: model?.getLanguageId() ?? session?.language ?? 'plaintext',
+      cursor: cur ? { lineNumber: cur.lineNumber, column: cur.column } : { lineNumber: 1, column: 1 },
+      files: { ...filesRef.current },
+      activePath: activeFileRef.current,
+    };
+    try {
+      const marker = await onCreateFork(draft);
+      setActiveForkId(marker.id);
+      setForkMode(true);
+    } catch (err) {
+      props.onError?.(err as Error);
+    }
+  };
+
+  const handleOpenFork = async (id: string) => {
+    if (forkMode) return;
+    pause();
+    setShowForkList(false);
+    const editor = player.getEditor();
+    if (!editor) return;
+    try {
+      const loaded = (await onOpenForkRef.current?.(id)) ?? null;
+      if (!loaded) return;
+      setActiveForkId(id);
+      setForkMode(true);
+      if (loaded.files) setFiles((prev) => ({ ...prev, ...loaded.files }));
+      const path = loaded.activePath ?? activeFileRef.current;
+      if (path) {
+        setActiveFile(path);
+        setSeenFiles((prev) => (prev.includes(path) ? prev : [...prev, path]));
+      }
+      const model = editor.getModel();
+      if (model) {
+        model.setValue(loaded.content);
+        if (path) player.getMonaco()?.editor.setModelLanguage(model, languageForPath(path));
+      }
+      if (loaded.cursor) editor.setPosition(loaded.cursor);
+    } catch (err) {
+      props.onError?.(err as Error);
+    }
+  };
+
+  const flushForkSave = () => {
+    const id = activeForkIdRef.current;
+    const editor = player.getEditor();
+    const model = editor?.getModel();
+    if (!id || !model) return;
+    const cur = editor?.getPosition();
+    onSaveForkRef.current?.(id, {
+      content: model.getValue(),
+      cursor: cur ? { lineNumber: cur.lineNumber, column: cur.column } : { lineNumber: 1, column: 1 },
+      files: { ...filesRef.current },
+      activePath: activeFileRef.current,
+    });
+  };
+
+  const returnToPlayback = () => {
+    flushForkSave();
+    const marker = forks.find((f) => f.id === activeForkIdRef.current);
+    setForkMode(false);
+    setActiveForkId(null);
+    const engine = player.getEngine();
+    if (marker) {
+      engine.seek(marker.timestamp);
+      engine.play();
+    }
+  };
+
+  const handleTogglePlay = () => {
+    if (forkMode) return returnToPlayback();
+    if (isPlaying) pause();
+    else play();
+  };
+
+  const handleDeleteFork = (id: string) => {
+    onDeleteFork?.(id);
+    if (activeForkIdRef.current === id) {
+      setForkMode(false);
+      setActiveForkId(null);
+    }
+  };
+
+  // Debounced autosave of fork edits (+ live preview store updates).
+  useEffect(() => {
+    if (!forkMode || !activeForkId) return;
+    const editor = player.getEditor();
+    if (!editor) return;
+    const disposable = editor.onDidChangeModelContent(() => {
+      const path = activeFileRef.current;
+      const model = editor.getModel();
+      if (path && model) {
+        const content = model.getValue();
+        setFiles((prev) => ({ ...prev, [path]: content }));
+      }
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = setTimeout(flushForkSave, 1500);
+    });
+    return () => {
+      disposable.dispose();
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+    // player.getEditor() is read at run time; deps intentionally minimal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forkMode, activeForkId]);
+
+  // Close the fork list on outside click.
+  useEffect(() => {
+    if (!showForkList) return;
+    const close = (e: MouseEvent) => {
+      if (!forkListRef.current?.contains(e.target as Node)) setShowForkList(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showForkList]);
 
   if (error) {
     return (
@@ -213,6 +439,8 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
       </div>
     );
   }
+
+  const pct = position.progress * 100;
 
   return (
     <div
@@ -232,12 +460,7 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
           {tabs.length > 0 && (
             <div className="os-tabs">
               {tabs.map((path) => (
-                <div
-                  key={path}
-                  className="os-tab"
-                  data-active={path === activeFile}
-                  onClick={() => selectFile(path)}
-                >
+                <div key={path} className="os-tab" data-active={path === activeFile} onClick={() => selectFile(path)}>
                   {path.split('/').pop()}
                 </div>
               ))}
@@ -255,18 +478,14 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
                 player.onMount(editor, monaco as unknown as typeof monacoType)
               }
               options={{
-                readOnly: true,
+                readOnly: !editable,
                 minimap: { enabled: false },
                 automaticLayout: true,
                 scrollBeyondLastLine: false,
               }}
             />
-            {pointer && dot && (
-              <div
-                aria-hidden
-                className="os-pointer"
-                style={{ left: `${dot.x * 100}%`, top: `${dot.y * 100}%` }}
-              />
+            {pointer && dot && !forkMode && (
+              <div aria-hidden className="os-pointer" style={{ left: `${dot.x * 100}%`, top: `${dot.y * 100}%` }} />
             )}
           </div>
         </div>
@@ -283,10 +502,11 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
           <button
             type="button"
             className="os-btn os-btn-primary os-btn-round"
-            onClick={() => (isPlaying ? pause() : play())}
-            aria-label={isPlaying ? 'Pause' : 'Play'}
+            onClick={handleTogglePlay}
+            aria-label={forkMode ? 'Return to playback' : isPlaying ? 'Pause' : 'Play'}
+            title={forkMode ? 'Return to playback' : undefined}
           >
-            {isPlaying ? <PauseIcon /> : <PlayIcon />}
+            {isPlaying && !forkMode ? <PauseIcon /> : <PlayIcon />}
           </button>
           <span className="os-time">
             {formatTime(position.currentTime)} / {formatTime(position.totalTime)}
@@ -298,19 +518,27 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
               min={0}
               max={1000}
               value={Math.round(position.progress * 1000)}
+              disabled={forkMode}
               onChange={(e) => seek((Number(e.target.value) / 1000) * position.totalTime)}
-              // Fill the track up to the playhead — the sleek part browsers won't do.
-              style={{
-                background: `linear-gradient(to right, var(--os-accent) ${
-                  position.progress * 100
-                }%, var(--os-border) ${position.progress * 100}%)`,
-              }}
+              style={{ background: `linear-gradient(to right, var(--os-accent) ${pct}%, var(--os-border) ${pct}%)` }}
               aria-label="Seek"
             />
+            {position.totalTime > 0 &&
+              forks.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  className="os-fork-marker"
+                  style={{ left: `${(f.timestamp / position.totalTime) * 100}%` }}
+                  title={f.label ?? `Fork at ${formatTime(f.timestamp)}`}
+                  onClick={() => handleOpenFork(f.id)}
+                />
+              ))}
           </div>
           <select
             className="os-select"
             defaultValue="1"
+            disabled={forkMode}
             onChange={(e) => setSpeed(Number(e.target.value))}
             aria-label="Playback speed"
           >
@@ -319,8 +547,69 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
             <option value="1.5">1.5×</option>
             <option value="2">2×</option>
           </select>
-          {state !== PlaybackState.PLAYING && editWhilePaused && (
-            <span className="os-hint">edit freely — play to resume</span>
+
+          {forkEnabled && (
+            <div ref={forkListRef} style={{ position: 'relative', display: 'flex' }}>
+              <button
+                type="button"
+                className="os-btn"
+                onClick={handleCreateFork}
+                disabled={forkMode}
+                title="Pause and edit the code at this point"
+              >
+                ⑂ Fork{forks.length > 0 ? ` (${forks.length})` : ''}
+              </button>
+              {forks.length > 0 && (
+                <button
+                  type="button"
+                  className="os-btn"
+                  onClick={() => setShowForkList((v) => !v)}
+                  aria-label="Show forks"
+                  style={{ minWidth: 24, padding: '0 6px' }}
+                >
+                  ▾
+                </button>
+              )}
+              {showForkList && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    right: 0,
+                    marginBottom: 6,
+                    minWidth: 200,
+                    background: 'var(--os-surface)',
+                    border: '1px solid var(--os-border)',
+                    borderRadius: 8,
+                    boxShadow: '0 6px 20px rgba(0,0,0,0.35)',
+                    maxHeight: 220,
+                    overflowY: 'auto',
+                    zIndex: 20,
+                  }}
+                >
+                  {forks.map((f, i) => (
+                    <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 10px', borderBottom: '1px solid var(--os-border)' }}>
+                      <span style={{ fontSize: 12 }}>
+                        {f.label ?? `Fork #${i + 1}`}{' '}
+                        <span className="os-time">{formatTime(f.timestamp)}</span>
+                      </span>
+                      <span style={{ display: 'flex', gap: 4 }}>
+                        <button type="button" className="os-btn" style={{ height: 22, fontSize: 11 }} onClick={() => handleOpenFork(f.id)}>Open</button>
+                        {onDeleteFork && (
+                          <button type="button" className="os-btn" style={{ height: 22, fontSize: 11 }} onClick={() => handleDeleteFork(f.id)}>Delete</button>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {forkMode ? (
+            <span className="os-hint">forking — edit freely, ▶ to resume</span>
+          ) : (
+            editable && <span className="os-hint">edit freely — play to resume</span>
           )}
         </div>
       )}
