@@ -2,7 +2,15 @@ export { ScrimRecorder } from './ScrimRecorder.js';
 export type { ScrimRecorderProps } from './ScrimRecorder.js';
 
 export { ScrimPlayer } from './ScrimPlayer.js';
-export type { ScrimPlayerProps } from './ScrimPlayer.js';
+export type { ScrimPlayerProps, PlayerFiles } from './ScrimPlayer.js';
+
+export { FileTree } from './FileTree.js';
+export type { FileTreeProps } from './FileTree.js';
+export { buildFileTree, languageForPath } from './file-tree.js';
+export type { TreeNode } from './file-tree.js';
+
+export { resolveTheme, injectStyles, OPENSCRIM_CSS } from './styles.js';
+export type { OpenScrimTheme, ThemeInput } from './styles.js';
 
 export { useRecorder } from './useRecorder.js';
 export type {

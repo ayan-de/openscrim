@@ -157,7 +157,14 @@ export function usePlayer(options: UsePlayerOptions = {}): UsePlayerResult {
   useEffect(() => {
     return () => {
       attachmentRef.current?.detach();
+      attachmentRef.current = null;
       engineRef.current?.destroy();
+      // Null the refs so a remount (e.g. React StrictMode's double-invoke, or
+      // a real remount) rebuilds a fresh engine with fresh handlers instead of
+      // reusing this destroyed one — otherwise positionUpdate never fires.
+      engineRef.current = null;
+      editorRef.current = null;
+      monacoRef.current = null;
     };
   }, []);
 
