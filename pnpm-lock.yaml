@@ -51,6 +51,9 @@ importers:
       '@thisisayande/openscrim-monaco':
         specifier: workspace:*
         version: link:../../packages/openscrim-monaco
+      '@thisisayande/openscrim-react':
+        specifier: workspace:*
+        version: link:../../packages/openscrim-react
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1

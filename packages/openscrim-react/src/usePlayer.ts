@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PlaybackEngine, PlaybackState } from '@thisisayande/openscrim-core';
 import type {
+  FileChangeEvent,
   MousePointerEvent,
   PlaybackPosition,
   RecordingSession,
@@ -32,6 +33,12 @@ export interface UsePlayerOptions {
   onContentRendered?: (content: string) => void;
   /** Fires on recorded pointer events — render your own cursor/trail overlay. */
   onPointer?: (pointer: MousePointerEvent) => void;
+  /**
+   * Fires when playback switches to another file. Multi-file hosts drive their
+   * file tree / tabs / preview store from this; the editor's own model content
+   * is still swapped for you by the underlying attachment.
+   */
+  onFileChange?: (event: FileChangeEvent) => void;
 }
 
 export interface UsePlayerResult {
@@ -45,6 +52,10 @@ export interface UsePlayerResult {
   /** Wire into `<Editor onMount={...}>`. */
   onMount: EditorMountHandler;
   getEngine: () => PlaybackEngine;
+  /** The mounted editor, or null before mount. Handy for fork/multi-file hosts. */
+  getEditor: () => monacoType.editor.IStandaloneCodeEditor | null;
+  /** The mounted monaco namespace, or null before mount. */
+  getMonaco: () => typeof monacoType | null;
 }
 
 /**
@@ -59,12 +70,15 @@ export function usePlayer(options: UsePlayerOptions = {}): UsePlayerResult {
   const editorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(
     null
   );
+  const monacoRef = useRef<typeof monacoType | null>(null);
   const attachmentRef = useRef<PlaybackAttachment | null>(null);
 
   const onContentRenderedRef = useRef(options.onContentRendered);
   const onPointerRef = useRef(options.onPointer);
+  const onFileChangeRef = useRef(options.onFileChange);
   onContentRenderedRef.current = options.onContentRendered;
   onPointerRef.current = options.onPointer;
+  onFileChangeRef.current = options.onFileChange;
 
   const [position, setPosition] = useState<PlaybackPosition>(ZERO_POSITION);
   const [state, setState] = useState<PlaybackState>(PlaybackState.IDLE);
@@ -84,9 +98,11 @@ export function usePlayer(options: UsePlayerOptions = {}): UsePlayerResult {
             });
           }
         } else if (type === 'eventProcessed') {
-          const payload = data as { type: string; event?: MousePointerEvent };
+          const payload = data as { type: string; event?: unknown };
           if (payload.type === 'pointer' && payload.event) {
-            onPointerRef.current?.(payload.event);
+            onPointerRef.current?.(payload.event as MousePointerEvent);
+          } else if (payload.type === 'fileChange' && payload.event) {
+            onFileChangeRef.current?.(payload.event as FileChangeEvent);
           }
         }
       });
@@ -110,6 +126,7 @@ export function usePlayer(options: UsePlayerOptions = {}): UsePlayerResult {
   const onMount = useCallback<EditorMountHandler>(
     (editor, monaco) => {
       editorRef.current = editor;
+      monacoRef.current = monaco;
       attachmentRef.current?.detach();
       attachmentRef.current = attachPlayback(editor, monaco, getEngine(), {
         onContentRendered: (content) => onContentRenderedRef.current?.(content),
@@ -154,5 +171,7 @@ export function usePlayer(options: UsePlayerOptions = {}): UsePlayerResult {
     setSpeed,
     onMount,
     getEngine,
+    getEditor: () => editorRef.current,
+    getMonaco: () => monacoRef.current,
   };
 }

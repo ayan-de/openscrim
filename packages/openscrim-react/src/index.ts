@@ -20,6 +20,7 @@ export type {
   RecordingSession,
   RecordingSessionState,
   MousePointerEvent,
+  FileChangeEvent,
   PlaybackPosition,
   TantricaFile,
 } from '@thisisayande/openscrim-core';

@@ -16,6 +16,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@thisisayande/openscrim-core": "workspace:*",
     "@thisisayande/openscrim-monaco": "workspace:*",
+    "@thisisayande/openscrim-react": "workspace:*",
     "@repo/types": "workspace:*",
     "@repo/ui": "workspace:*",
     "@tailwindcss/postcss": "^4.1.13",

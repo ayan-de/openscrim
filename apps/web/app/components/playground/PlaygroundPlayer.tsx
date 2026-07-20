@@ -1,25 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
 import { getMaterialFileIcon } from 'file-extension-icon-js';
 import { GitBranch, Globe, Pause, Play, RotateCcw, X } from 'lucide-react';
-import {
-  PlaybackEngine,
-  PlaybackState,
-  RecordingEventType,
-} from '@thisisayande/openscrim-core';
+import { PlaybackState, RecordingEventType } from '@thisisayande/openscrim-core';
 import type {
   FileChangeEvent,
-  MousePointerEvent,
-  PlaybackEventHandler,
-  PlaybackPosition,
   RecordingSession,
 } from '@thisisayande/openscrim-core';
-import { attachPlayback } from '@thisisayande/openscrim-monaco';
-import type { PlaybackAttachment } from '@thisisayande/openscrim-monaco';
+import { usePlayer } from '@thisisayande/openscrim-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLoading } from '@/context/LoadingContext';
 import { getRecordingStorage } from '@/lib/storage';
@@ -62,15 +54,6 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
   const [session, setSession] = useState<RecordingSession | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [playbackState, setPlaybackState] = useState<PlaybackState>(
-    PlaybackState.IDLE
-  );
-  const [position, setPosition] = useState<PlaybackPosition>({
-    currentTime: 0,
-    totalTime: 0,
-    currentEventIndex: 0,
-    progress: 0,
-  });
   const [speed, setSpeed] = useState(1);
   const [activeFile, setActiveFile] = useState<string | null>(null);
   const [seenFiles, setSeenFiles] = useState<string[]>([]);
@@ -96,13 +79,11 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
   const activeFileRef = useRef<string | null>(null);
   const playAreaRef = useRef<HTMLDivElement>(null);
 
-  const engineRef = useRef<PlaybackEngine | null>(null);
   const editorRef = useRef<monacoType.editor.IStandaloneCodeEditor | null>(
     null
   );
   const monacoRef = useRef<typeof monacoType | null>(null);
   const playFilesRef = useRef<PlaygroundFiles>({ files: {}, dirs: [] });
-  const attachmentRef = useRef<PlaybackAttachment | null>(null);
   const activeForkIdRef = useRef<string | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const forkListRef = useRef<HTMLDivElement>(null);
@@ -117,63 +98,42 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
     playFilesRef.current = playFiles;
   }, [playFiles]);
 
-  const ensureEngine = useCallback((): PlaybackEngine => {
-    if (!engineRef.current) {
-      engineRef.current = new PlaybackEngine();
-    }
-    return engineRef.current;
-  }, []);
-
-  // Engine lifecycle + UI state sync
-  useEffect(() => {
-    const engine = ensureEngine();
-
-    const handler: PlaybackEventHandler = ({ type, data }) => {
-      switch (type) {
-        case 'stateChange':
-          setPlaybackState(data.state);
-          break;
-        case 'positionUpdate':
-          setPosition(data);
-          break;
-        case 'eventProcessed':
-          if (data.type === 'fileChange') {
-            const event = data.event as FileChangeEvent;
-            activeFileRef.current = event.path;
-            setActiveFile(event.path);
-            setSeenFiles((prev) =>
-              prev.includes(event.path) ? prev : [...prev, event.path]
-            );
-            if (event.content !== undefined) {
-              const content = event.content;
-              setPlayFiles((prev) => updateFile(prev, event.path, content));
-            }
-          }
-          if (data.type === 'pointer') {
-            const event = data.event as MousePointerEvent;
-            setPointer((prev) => ({
-              x: event.x,
-              y: event.y,
-              clickAt:
-                event.kind === 'click' ? event.timestamp : (prev?.clickAt ?? 0),
-            }));
-          }
-          break;
-        case 'error':
-          console.error('Playback error:', data);
-          break;
+  // Playback is driven by the OpenScrim React SDK. It owns the PlaybackEngine
+  // and renders content into the editor; this component keeps the IDE chrome
+  // (file tree, tabs, preview, forks) in sync via the event callbacks.
+  const player = usePlayer({
+    session,
+    speed,
+    // PlaygroundPlayer decides editability itself (fork mode), so the SDK must
+    // not auto-toggle readOnly on pause.
+    editWhilePaused: false,
+    onFileChange: (event) => {
+      activeFileRef.current = event.path;
+      setActiveFile(event.path);
+      setSeenFiles((prev) =>
+        prev.includes(event.path) ? prev : [...prev, event.path]
+      );
+      if (event.content !== undefined) {
+        const content = event.content;
+        setPlayFiles((prev) => updateFile(prev, event.path, content));
       }
-    };
-
-    engine.addEventHandler(handler);
-    return () => {
-      attachmentRef.current?.detach();
-      attachmentRef.current = null;
-      engine.removeEventHandler(handler);
-      engine.destroy();
-      engineRef.current = null;
-    };
-  }, [ensureEngine]);
+    },
+    onPointer: (event) => {
+      setPointer((prev) => ({
+        x: event.x,
+        y: event.y,
+        clickAt:
+          event.kind === 'click' ? event.timestamp : (prev?.clickAt ?? 0),
+      }));
+    },
+    // Mirror every rendered edit into the preview's file store
+    onContentRendered: (content) => {
+      const path = activeFileRef.current;
+      if (path) setPlayFiles((prev) => updateFile(prev, path, content));
+    },
+  });
+  const playbackState = player.state;
+  const position = player.position;
 
   // Load the recording + its forks
   useEffect(() => {
@@ -198,7 +158,7 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
             files: { ...seeded, ...prev.files },
           }));
         }
-        ensureEngine().loadSession(loaded);
+        // The SDK's usePlayer loads `session` into the engine via its prop.
       })
       .catch((err) => {
         console.error('Failed to load recording:', err);
@@ -214,7 +174,7 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
     return () => {
       cancelled = true;
     };
-  }, [sessionId, isAuthenticated, ensureEngine]);
+  }, [sessionId, isAuthenticated]);
 
   useEffect(() => {
     if (!showForkList) return;
@@ -262,15 +222,8 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
   ) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
-    editor.updateOptions({ readOnly: true });
-    attachmentRef.current?.detach();
-    attachmentRef.current = attachPlayback(editor, monaco, ensureEngine(), {
-      // Mirror every rendered edit into the preview's file store
-      onContentRendered: (content) => {
-        const path = activeFileRef.current;
-        if (path) setPlayFiles((prev) => updateFile(prev, path, content));
-      },
-    });
+    // Attaches playback, wires onContentRendered, and sets readOnly.
+    player.onMount(editor, monaco);
   };
 
   const handleTogglePlay = () => {
@@ -279,23 +232,23 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
       void handleReturnToPlayback();
       return;
     }
-    const engine = ensureEngine();
+    const engine = player.getEngine();
     if (playbackState === PlaybackState.PLAYING) engine.pause();
     else engine.play();
   };
 
   const handleRestart = () => {
-    ensureEngine().seek(0);
+    player.seek(0);
   };
 
   const handleTimelineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const progress = parseFloat(e.target.value);
-    ensureEngine().seek((progress * position.totalTime) / 100);
+    player.seek((progress * position.totalTime) / 100);
   };
 
   const handleSpeedChange = (newSpeed: number) => {
     setSpeed(newSpeed);
-    ensureEngine().setSpeed(newSpeed);
+    player.setSpeed(newSpeed);
   };
 
   /** Latest known content for a file: live store first, else its first recorded snapshot. */
@@ -334,13 +287,13 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
         e.type === RecordingEventType.FILE_CHANGE &&
         (e as FileChangeEvent).path === path
     );
-    if (first) ensureEngine().seek(first.timestamp - firstEventTime);
+    if (first) player.seek(first.timestamp - firstEventTime);
   };
 
   const handleCreateFork = async () => {
-    const engine = engineRef.current;
     const editor = editorRef.current;
-    if (!session || !engine || !editor || isForking) return;
+    if (!session || !editor || isForking) return;
+    const engine = player.getEngine();
 
     engine.pause();
     const model = editor.getModel();
@@ -441,9 +394,9 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
     setActiveForkId(null);
     activeForkIdRef.current = null;
 
-    const engine = engineRef.current;
     const fork = forks.find((f) => f.id === forkId);
-    if (engine && fork) {
+    if (fork) {
+      const engine = player.getEngine();
       engine.seek(fork.timestamp);
       engine.play();
     }
@@ -451,7 +404,7 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
 
   const handleOpenFork = async (fork: Fork) => {
     if (isForking) return;
-    engineRef.current?.pause();
+    player.getEngine().pause();
 
     const latest = await getFork(fork.id);
     const editor = editorRef.current;
@@ -657,7 +610,7 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
               })}
           </div>
 
-          {/* Monaco — driven by attachPlayback, editable only while forking */}
+          {/* Monaco — driven by the SDK player, editable only while forking */}
           <div
             className={`flex-grow min-h-0 bg-background ${
               isForking ? 'border-l-2 border-primary' : ''

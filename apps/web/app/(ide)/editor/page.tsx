@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
 import { FaCircle, FaPlay, FaStop } from 'react-icons/fa';
-import { MonacoRecorder } from '@thisisayande/openscrim-monaco';
+import { useRecorder } from '@thisisayande/openscrim-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLoading } from '@/context/LoadingContext';
 import { getRecordingStorage } from '@/lib/storage';
@@ -92,12 +92,8 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
       tabSize: 4,
     });
 
-  const recorderRef = useRef<MonacoRecorder | null>(null);
-  const recIntervalRef = useRef<NodeJS.Timeout | null>(null);
   /** Project files as they were when recording started — saved with the session */
   const filesAtRecordStartRef = useRef<Record<string, string>>({});
-  const [isRecording, setIsRecording] = useState(false);
-  const [recDuration, setRecDuration] = useState(0);
   const [showTitleModal, setShowTitleModal] = useState(false);
 
   // "Plays" dropdown — saved recordings, playable via /editor?play=<id>
@@ -110,19 +106,39 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
   const { showSuccess, showError } = useLoading();
   const storage = getRecordingStorage(() => isAuthenticated);
 
-  useEffect(() => {
-    return () => {
-      if (recIntervalRef.current) clearInterval(recIntervalRef.current);
-      recorderRef.current?.dispose();
-    };
-  }, []);
+  // Recording is driven by the OpenScrim React SDK; the app only supplies the
+  // persistence policy (via onComplete) and multi-file/pointer context.
+  const recorder = useRecorder({
+    onComplete: async (session) => {
+      session.files = filesAtRecordStartRef.current;
+      try {
+        await storage.save(session);
+        window.dispatchEvent(new CustomEvent('recording_saved'));
+        showSuccess(
+          `Recording saved! Duration: ${formatDuration(session.duration, 'timer')}, Events: ${session.events.length}`
+        );
+      } catch (err) {
+        console.error('Failed to save recording:', err);
+        showError('Failed to save recording');
+      }
+    },
+    onError: (err) => showError(err.message),
+  });
+  const {
+    isRecording,
+    duration: recDuration,
+    getManager: getRecordingManager,
+    onMount: handleEditorMount,
+    start: startRec,
+    stop: stopRec,
+  } = recorder;
 
   // Track the author's mouse across the whole IDE while recording —
   // normalized to the IDE area so playback can overlay a pointer anywhere.
   useEffect(() => {
     if (!isRecording) return;
     const area = ideAreaRef.current;
-    const manager = recorderRef.current?.getManager();
+    const manager = getRecordingManager();
     if (!area || !manager) return;
 
     let pending: { x: number; y: number } | null = null;
@@ -159,7 +175,7 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
       document.removeEventListener('mousedown', onMouseDown, true);
       if (flushTimer) clearTimeout(flushTimer);
     };
-  }, [isRecording]);
+  }, [isRecording, getRecordingManager]);
 
   // Fetch the recording list fresh each time the dropdown opens
   useEffect(() => {
@@ -186,61 +202,20 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
     return () => document.removeEventListener('mousedown', close);
   }, [showPlays, isAuthenticated]);
 
-  const handleEditorMount = (
-    editor: monacoType.editor.IStandaloneCodeEditor,
-    monaco: typeof monacoType
-  ) => {
-    recorderRef.current?.dispose();
-    recorderRef.current = new MonacoRecorder(editor, monaco);
-  };
-
   const startRecording = (title: string) => {
-    const recorder = recorderRef.current;
-    if (!recorder) {
-      showError('Open a file first — the editor is not ready yet');
-      return;
-    }
+    // Snapshot the whole project so multi-file playback has every file from t0;
+    // the SDK captures the edit/cursor/file stream, we attach the snapshot in
+    // onComplete. start() throws (→ onError) if the editor isn't mounted yet.
     filesAtRecordStartRef.current = { ...store.files };
-    recorder.start(title);
-    setIsRecording(true);
-    recIntervalRef.current = setInterval(() => {
-      setRecDuration(recorder.getCurrentDuration());
-    }, 100);
+    startRec(title);
   };
 
-  const handleToggleRecording = async () => {
-    const recorder = recorderRef.current;
-    if (!recorder) {
-      showError('Open a file first — the editor is not ready yet');
-      return;
-    }
-
+  const handleToggleRecording = () => {
     if (!isRecording) {
       setShowTitleModal(true);
       return;
     }
-
-    if (recIntervalRef.current) {
-      clearInterval(recIntervalRef.current);
-      recIntervalRef.current = null;
-    }
-    setIsRecording(false);
-    setRecDuration(0);
-
-    const session = recorder.stop();
-    if (session) {
-      session.files = filesAtRecordStartRef.current;
-      try {
-        await storage.save(session);
-        window.dispatchEvent(new CustomEvent('recording_saved'));
-        showSuccess(
-          `Recording saved! Duration: ${formatDuration(session.duration, 'timer')}, Events: ${session.events.length}`
-        );
-      } catch (err) {
-        console.error('Failed to save recording:', err);
-        showError('Failed to save recording');
-      }
-    }
+    stopRec();
   };
 
   const tree = buildTree(store);
