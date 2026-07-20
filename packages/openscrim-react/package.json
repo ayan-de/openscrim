@@ -1,6 +1,6 @@
 {
   "name": "@thisisayande/openscrim-react",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React SDK for OpenScrim — drop-in <ScrimRecorder> / <ScrimPlayer> components and headless hooks to record and replay interactive, forkable code screencasts. Bring your own storage.",
   "keywords": [
     "react",
