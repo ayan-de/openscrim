@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { getMaterialFileIcon } from 'file-extension-icon-js';
 import { Globe, X } from 'lucide-react';
 import type { RecordingSession } from '@thisisayande/openscrim-core';
 import {
@@ -186,6 +187,17 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
         <ScrimPlayer
           session={session ?? undefined}
           height="100%"
+          sidebarWidth="16rem"
+          renderFileIcon={(name) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={getMaterialFileIcon(name)}
+              alt={name}
+              width={18}
+              height={18}
+              style={{ opacity: 0.9 }}
+            />
+          )}
           forks={forks}
           onCreateFork={handleCreateFork}
           onSaveFork={handleSaveFork}

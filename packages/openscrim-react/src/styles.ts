@@ -68,6 +68,7 @@ export const OPENSCRIM_CSS = `
   font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
   font-size: 13px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  position: relative;
 }
 .openscrim[data-theme='light'] {
   --os-bg: #f5f5f5;
@@ -83,7 +84,7 @@ export const OPENSCRIM_CSS = `
 .os-body { display: flex; flex: 1; min-height: 0; position: relative; }
 .os-sidebar {
   flex: 0 0 auto;
-  width: 200px;
+  width: var(--os-sidebar-width, 220px);
   overflow-y: auto;
   background: var(--os-bg);
   border-right: 1px solid var(--os-border);

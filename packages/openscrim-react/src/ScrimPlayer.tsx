@@ -106,6 +106,10 @@ export interface ScrimPlayerProps {
   pointer?: boolean;
   /** Show the file sidebar. Default: auto (on when the recording has >1 file). */
   sidebar?: boolean;
+  /** Sidebar width (any CSS size). Default 220px. */
+  sidebarWidth?: string | number;
+  /** Custom icon per file in the tree (e.g. material file-type icons). */
+  renderFileIcon?: (name: string) => ReactNode;
 
   // --- Forking (all optional; storage stays with you) ---
   /** Existing forks to render as scrubber markers. */
@@ -187,6 +191,8 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     controls = true,
     pointer = true,
     sidebar,
+    sidebarWidth,
+    renderFileIcon,
     forks = [],
     onCreateFork,
     onSaveFork,
@@ -206,6 +212,17 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     if (typeof document !== 'undefined') injectStyles(document);
   }, []);
   const resolved = resolveTheme(theme);
+  const rootStyle = {
+    ...resolved.vars,
+    height,
+    ...(sidebarWidth != null
+      ? {
+          '--os-sidebar-width':
+            typeof sidebarWidth === 'number' ? `${sidebarWidth}px` : sidebarWidth,
+        }
+      : {}),
+    ...style,
+  } as CSSProperties;
 
   const { session, error } = useResolvedSession(props);
   const [activeFile, setActiveFile] = useState<string | null>(null);
@@ -262,6 +279,9 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     onPointer: pointer ? setDot : undefined,
     onFileChange: (event) => {
       if (forkMode) return; // playback is paused during a fork
+      // Imperative — onContentRendered fires in the same burst, before the
+      // re-render syncs activeFileRef, so content lands on the right file.
+      activeFileRef.current = event.path;
       setActiveFile(event.path);
       setSeenFiles((prev) => (prev.includes(event.path) ? prev : [...prev, event.path]));
       if (event.content !== undefined) {
@@ -275,6 +295,37 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     },
   });
   const { position, state, isPlaying, play, pause, seek, setSpeed } = player;
+
+  /**
+   * PlaybackEngine's `reset` event (emitted synchronously at the start of
+   * every seek) carries only content/language — no file path — so it can't
+   * tell us which file it belongs to. We resolve it ourselves by scanning for
+   * the last FILE_CHANGE at/before the target time, and set the ref *before*
+   * seeking so the reset's onContentRendered call lands in the right bucket
+   * instead of clobbering whatever file was active before the seek.
+   */
+  const syncActiveFileForTime = (timeMs: number) => {
+    if (!session) return;
+    const t0 = session.events[0]?.timestamp ?? 0;
+    const target = t0 + timeMs;
+    let path: string | null = null;
+    for (const ev of session.events) {
+      if (ev.timestamp > target) break;
+      if (ev.type === RecordingEventType.FILE_CHANGE) {
+        path = (ev as FileChangeEvent).path;
+      }
+    }
+    if (path) {
+      activeFileRef.current = path;
+      setActiveFile(path);
+      setSeenFiles((prev) => (prev.includes(path!) ? prev : [...prev, path!]));
+    }
+  };
+
+  const seekTo = (timeMs: number) => {
+    syncActiveFileForTime(timeMs);
+    seek(timeMs);
+  };
 
   // First-appearance timestamps drive "click a file → jump there".
   const firstAppearance = useMemo(() => {
@@ -315,6 +366,7 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
       const editor = player.getEditor();
       const model = editor?.getModel();
       if (!editor || !model || path === activeFileRef.current) return;
+      activeFileRef.current = path;
       setActiveFile(path);
       setSeenFiles((prev) => (prev.includes(path) ? prev : [...prev, path]));
       model.setValue(contentForFile(path));
@@ -322,7 +374,7 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
       return;
     }
     const at = firstAppearance.get(path);
-    if (at !== undefined) seek(at);
+    if (at !== undefined) seekTo(at);
   };
 
   const handleCreateFork = async () => {
@@ -362,6 +414,7 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
       if (loaded.files) setFiles((prev) => ({ ...prev, ...loaded.files }));
       const path = loaded.activePath ?? activeFileRef.current;
       if (path) {
+        activeFileRef.current = path;
         setActiveFile(path);
         setSeenFiles((prev) => (prev.includes(path) ? prev : [...prev, path]));
       }
@@ -395,8 +448,9 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     const marker = forks.find((f) => f.id === activeForkIdRef.current);
     setForkMode(false);
     setActiveForkId(null);
-    const engine = player.getEngine();
     if (marker) {
+      syncActiveFileForTime(marker.timestamp);
+      const engine = player.getEngine();
       engine.seek(marker.timestamp);
       engine.play();
     }
@@ -404,8 +458,14 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
 
   const handleTogglePlay = () => {
     if (forkMode) return returnToPlayback();
-    if (isPlaying) pause();
-    else play();
+    if (isPlaying) {
+      pause();
+    } else {
+      // play() re-seeks to the current position internally (to restore
+      // canonical content over any paused-edit), which also emits a reset.
+      syncActiveFileForTime(position.currentTime);
+      play();
+    }
   };
 
   const handleDeleteFork = (id: string) => {
@@ -451,7 +511,7 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
 
   if (error) {
     return (
-      <div className={`openscrim ${className ?? ''}`} data-theme={resolved.base} style={{ ...resolved.vars, ...style } as CSSProperties}>
+      <div className={`openscrim ${className ?? ''}`} data-theme={resolved.base} style={rootStyle}>
         <div className="os-error">Could not load recording: {error.message}</div>
       </div>
     );
@@ -463,13 +523,18 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     <div
       className={`openscrim ${className ?? ''}`}
       data-theme={resolved.base}
-      style={{ ...resolved.vars, height, ...style } as CSSProperties}
+      style={rootStyle}
     >
       <div className="os-body">
         {showSidebar && (
           <div className="os-sidebar">
             <div className="os-sidebar-title">Files</div>
-            <FileTree nodes={treeNodes} activeFile={activeFile} onSelectFile={selectFile} />
+            <FileTree
+              nodes={treeNodes}
+              activeFile={activeFile}
+              onSelectFile={selectFile}
+              renderIcon={renderFileIcon ? (name) => renderFileIcon(name) : undefined}
+            />
           </div>
         )}
 
@@ -504,18 +569,19 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
           </div>
         </div>
 
-        {/* Pointer overlays the whole body — recordings normalize the cursor to
-            the full IDE area, not just the editor pane. */}
-        {pointer && dot && !forkMode && (
-          <div aria-hidden className="os-pointer" style={{ left: `${dot.x * 100}%`, top: `${dot.y * 100}%` }} />
-        )}
-
         {renderPreview && (
           <div style={{ flex: '1 1 40%', minWidth: 0, borderLeft: '1px solid var(--os-border)' }}>
             {renderPreview({ files, activeFile })}
           </div>
         )}
       </div>
+
+      {/* Pointer overlays the full player root — recordings normalize the cursor
+          to the whole IDE area (full height, matching a floating control bar),
+          not the body minus the docked controls. */}
+      {pointer && dot && !forkMode && (
+        <div aria-hidden className="os-pointer" style={{ left: `${dot.x * 100}%`, top: `${dot.y * 100}%` }} />
+      )}
 
       {controls && !children && (
         <div className="os-controls">
@@ -539,7 +605,7 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
               max={1000}
               value={Math.round(position.progress * 1000)}
               disabled={forkMode}
-              onChange={(e) => seek((Number(e.target.value) / 1000) * position.totalTime)}
+              onChange={(e) => seekTo((Number(e.target.value) / 1000) * position.totalTime)}
               style={{ background: `linear-gradient(to right, var(--os-accent) ${pct}%, var(--os-border) ${pct}%)` }}
               aria-label="Seek"
             />

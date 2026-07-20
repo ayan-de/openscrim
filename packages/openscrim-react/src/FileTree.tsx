@@ -6,6 +6,8 @@ export interface FileTreeProps {
   activeFile: string | null;
   onSelectFile: (path: string) => void;
   fileTitle?: (path: string) => string;
+  /** Custom icon per file (e.g. material file-type icons). Defaults to a glyph. */
+  renderIcon?: (name: string, node: TreeNode) => React.ReactNode;
 }
 
 function Chevron({ open }: { open: boolean }) {
@@ -31,7 +33,7 @@ function FileIcon() {
  * injected OpenScrim stylesheet (`os-tree*` classes), so it themes with the
  * rest of the player.
  */
-export function FileTree({ nodes, activeFile, onSelectFile, fileTitle }: FileTreeProps) {
+export function FileTree({ nodes, activeFile, onSelectFile, fileTitle, renderIcon }: FileTreeProps) {
   const [closed, setClosed] = useState<Set<string>>(new Set());
 
   const toggle = (path: string) =>
@@ -65,7 +67,7 @@ export function FileTree({ nodes, activeFile, onSelectFile, fileTitle }: FileTre
         title={fileTitle?.(node.path)}
         onClick={() => onSelectFile(node.path)}
       >
-        <FileIcon />
+        {renderIcon ? renderIcon(node.name, node) : <FileIcon />}
         <span className="os-tree-name">{node.name}</span>
       </div>
     );
