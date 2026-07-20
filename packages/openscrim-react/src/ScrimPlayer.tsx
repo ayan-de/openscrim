@@ -121,6 +121,10 @@ export interface ScrimPlayerProps {
 
   /** Render a live preview pane; receives the reconstructed file contents. */
   renderPreview?: (files: PlayerFiles) => ReactNode;
+  /** Fires with the reconstructed file contents as playback/forking mutate them. */
+  onFilesChange?: (files: PlayerFiles) => void;
+  /** Fires when the player enters/leaves fork (editable) mode. */
+  onForkModeChange?: (forking: boolean) => void;
   /** Full-control escape hatch: replace the built-in transport with your own. */
   children?: (player: UsePlayerResult) => ReactNode;
   onError?: (error: Error) => void;
@@ -189,6 +193,8 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     onOpenFork,
     onDeleteFork,
     renderPreview,
+    onFilesChange,
+    onForkModeChange,
     children,
     className,
     style,
@@ -222,8 +228,12 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
 
   const onSaveForkRef = useRef(onSaveFork);
   const onOpenForkRef = useRef(onOpenFork);
+  const onFilesChangeRef = useRef(onFilesChange);
+  const onForkModeChangeRef = useRef(onForkModeChange);
   onSaveForkRef.current = onSaveFork;
   onOpenForkRef.current = onOpenFork;
+  onFilesChangeRef.current = onFilesChange;
+  onForkModeChangeRef.current = onForkModeChange;
 
   // Reset per-recording view state and seed the file store with the snapshot.
   useEffect(() => {
@@ -234,6 +244,13 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     setActiveForkId(null);
     setFiles(session?.files ? { ...session.files } : {});
   }, [session]);
+
+  useEffect(() => {
+    onFilesChangeRef.current?.({ files, activeFile });
+  }, [files, activeFile]);
+  useEffect(() => {
+    onForkModeChangeRef.current?.(forkMode);
+  }, [forkMode]);
 
   const player = usePlayer({
     session,
@@ -446,9 +463,9 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     <div
       className={`openscrim ${className ?? ''}`}
       data-theme={resolved.base}
-      style={{ ...resolved.vars, ...style } as CSSProperties}
+      style={{ ...resolved.vars, height, ...style } as CSSProperties}
     >
-      <div className="os-body" style={{ height }}>
+      <div className="os-body">
         {showSidebar && (
           <div className="os-sidebar">
             <div className="os-sidebar-title">Files</div>
@@ -484,11 +501,14 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
                 scrollBeyondLastLine: false,
               }}
             />
-            {pointer && dot && !forkMode && (
-              <div aria-hidden className="os-pointer" style={{ left: `${dot.x * 100}%`, top: `${dot.y * 100}%` }} />
-            )}
           </div>
         </div>
+
+        {/* Pointer overlays the whole body — recordings normalize the cursor to
+            the full IDE area, not just the editor pane. */}
+        {pointer && dot && !forkMode && (
+          <div aria-hidden className="os-pointer" style={{ left: `${dot.x * 100}%`, top: `${dot.y * 100}%` }} />
+        )}
 
         {renderPreview && (
           <div style={{ flex: '1 1 40%', minWidth: 0, borderLeft: '1px solid var(--os-border)' }}>

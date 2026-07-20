@@ -70,7 +70,7 @@ export function ScrimRecorder({
     <div
       className={`openscrim ${className ?? ''}`}
       data-theme={resolved.base}
-      style={{ ...resolved.vars, ...style } as CSSProperties}
+      style={{ ...resolved.vars, height, ...style } as CSSProperties}
     >
       {controls && !children && (
         <div className="os-controls" style={{ borderTop: 'none', borderBottom: '1px solid var(--os-border)' }}>
@@ -99,8 +99,7 @@ export function ScrimRecorder({
         </div>
       )}
 
-      {/* flex:'none' so the inline height wins over .os-editor's flex-grow */}
-      <div className="os-editor" style={{ height, flex: 'none' }}>
+      <div className="os-editor">
         <Editor
           height="100%"
           defaultLanguage={language}

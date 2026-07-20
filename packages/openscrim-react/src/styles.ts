@@ -78,10 +78,9 @@ export const OPENSCRIM_CSS = `
 }
 .openscrim * { box-sizing: border-box; }
 
-/* Layout: sidebar | (tabs / editor). Height comes from the component's
-   \`height\` prop set inline on .os-body, so it must NOT flex-grow (a
-   flex-basis of 0 would override that height and collapse to nothing). */
-.os-body { display: flex; min-height: 0; position: relative; }
+/* Layout: sidebar | (tabs / editor). The \`height\` prop sits on .openscrim,
+   so the body just fills the space left after the control bar. */
+.os-body { display: flex; flex: 1; min-height: 0; position: relative; }
 .os-sidebar {
   flex: 0 0 auto;
   width: 200px;
