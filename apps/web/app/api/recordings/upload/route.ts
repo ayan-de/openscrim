@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { createRecording } from '@/lib/recordingsService';
-import { readTantricaBuffer } from '@thisisayande/openscrim-core';
-import type { TantricaFile } from '@thisisayande/openscrim-core';
+import { readScrimBuffer } from '@thisisayande/openscrim-core';
+import type { ScrimFile } from '@thisisayande/openscrim-core';
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -27,9 +27,9 @@ export async function POST(request: Request) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  let parsed: TantricaFile;
+  let parsed: ScrimFile;
   try {
-    parsed = readTantricaBuffer(buffer);
+    parsed = readScrimBuffer(buffer);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
     return NextResponse.json(

@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useLoading } from '@/context/LoadingContext';
-import { uploadTantricaFile } from '@/lib/recordingsApi';
+import { uploadScrimFile } from '@/lib/recordingsApi';
 import Link from 'next/link';
 
 export default function UploadPage() {
@@ -15,14 +15,14 @@ export default function UploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (file: File) => {
-    if (!file.name.endsWith('.tantrica') && !file.name.endsWith('.json')) {
-      showError('Please upload a .tantrica or .json file');
+    if (!file.name.endsWith('.scrim') && !file.name.endsWith('.json')) {
+      showError('Please upload a .scrim or .json file');
       return;
     }
 
     showLoading('Uploading recording...');
     try {
-      const recording = await uploadTantricaFile(file);
+      const recording = await uploadScrimFile(file);
       showSuccess('Recording uploaded successfully!');
       router.push(`/r/${recording._id}`);
     } catch (err: unknown) {
@@ -89,10 +89,10 @@ export default function UploadPage() {
       >
         <div className="text-4xl mb-4">&#128228;</div>
         <h3 className="text-xl font-semibold text-white mb-2">
-          Drop your .tantrica file here
+          Drop your .scrim file here
         </h3>
         <p className="text-white/60 mb-4">
-          or click to browse. Accepts .tantrica and .json files.
+          or click to browse. Accepts .scrim and .json files.
         </p>
         <span className="inline-block bg-white/10 text-white/80 px-4 py-2 rounded-lg text-sm">
           Choose File
@@ -100,17 +100,17 @@ export default function UploadPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".tantrica,.json"
+          accept=".scrim,.json"
           onChange={handleFileChange}
           className="hidden"
         />
       </div>
 
       <div className="mt-8 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-6">
-        <h3 className="font-semibold text-white mb-3">About .tantrica files</h3>
+        <h3 className="font-semibold text-white mb-3">About .scrim files</h3>
         <p className="text-white/60 text-sm leading-relaxed">
-          .tantrica files are compressed recording files created by the Tantrica
-          VS Code extension. They contain all editor events (keystrokes, cursor
+          .scrim files are compressed recording files created by OpenScrim.
+          They contain all editor events (keystrokes, cursor
           movements, content changes) needed to replay a coding session at
           exactly the same speed and quality as the original — with zero pixel
           fluctuation and extremely small file sizes.

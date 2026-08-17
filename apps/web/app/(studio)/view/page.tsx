@@ -11,7 +11,7 @@ import { getRecordingStorage } from '@/lib/storage';
 import { formatDuration } from '@/lib/formatDuration';
 import { downloadRecording } from '@/lib/recordingsApi';
 import type { RecordingSession } from '@thisisayande/openscrim-core';
-import { sessionToTantricaFile } from '@thisisayande/openscrim-core';
+import { sessionToScrimFile } from '@thisisayande/openscrim-core';
 
 export default function ViewPage() {
   const { showError } = useLoading();
@@ -78,7 +78,7 @@ export default function ViewPage() {
   ) => {
     e.stopPropagation();
     try {
-      const filename = `${recording.title || 'recording'}.tantrica`;
+      const filename = `${recording.title || 'recording'}.scrim`;
       if (isAuthenticated) {
         await downloadRecording(recording.id, filename);
         return;
@@ -86,7 +86,7 @@ export default function ViewPage() {
       const storage = getRecordingStorage(() => isAuthenticated);
       const events = await storage.getEvents(recording.id);
       const session = { ...recording, events };
-      const file = sessionToTantricaFile(session);
+      const file = sessionToScrimFile(session);
       const jsonStr = JSON.stringify(file);
       const blob = new Blob([jsonStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);

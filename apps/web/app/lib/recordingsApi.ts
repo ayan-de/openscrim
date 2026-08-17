@@ -128,7 +128,7 @@ export async function deleteRecording(id: string): Promise<void> {
   await del(`/api/recordings/${id}`);
 }
 
-export async function uploadTantricaFile(
+export async function uploadScrimFile(
   file: File
 ): Promise<RecordingFromApi> {
   const formData = new FormData();

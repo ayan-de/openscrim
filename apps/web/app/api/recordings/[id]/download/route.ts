@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import { findOneRecording, getAllEvents } from '@/lib/recordingsService';
-import { writeTantricaBuffer } from '@thisisayande/openscrim-core';
-import type { TantricaFile } from '@thisisayande/openscrim-core';
+import { writeScrimBuffer } from '@thisisayande/openscrim-core';
+import type { ScrimFile } from '@thisisayande/openscrim-core';
 
 export async function GET(
   _request: Request,
@@ -24,7 +24,7 @@ export async function GET(
     const recording = await findOneRecording(id, session.user._id);
     const events = await getAllEvents(id);
 
-    const file: TantricaFile = {
+    const file: ScrimFile = {
       version: 1,
       metadata: {
         id: recording._id.toString(),
@@ -48,17 +48,17 @@ export async function GET(
         theme: 'vs-dark',
         wordWrap: true,
       },
-      events: events as unknown as TantricaFile['events'],
+      events: events as unknown as ScrimFile['events'],
     };
 
-    const tantricaFile = writeTantricaBuffer(file);
+    const scrimFile = writeScrimBuffer(file);
     const filename = recording.title.replace(/[^a-zA-Z0-9]/g, '_');
 
-    return new Response(new Uint8Array(tantricaFile), {
+    return new Response(new Uint8Array(scrimFile), {
       headers: {
         'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${filename}.tantrica"`,
-        'Content-Length': tantricaFile.length.toString(),
+        'Content-Disposition': `attachment; filename="${filename}.scrim"`,
+        'Content-Length': scrimFile.length.toString(),
       },
     });
   } catch (e: unknown) {

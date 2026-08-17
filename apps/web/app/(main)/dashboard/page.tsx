@@ -115,7 +115,7 @@ export default function DashboardPage() {
           href="/upload"
           className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
         >
-          Upload .tantrica
+          Upload .scrim
         </Link>
       </div>
 
@@ -129,7 +129,7 @@ export default function DashboardPage() {
             No recordings yet
           </h3>
           <p className="text-white/60 mb-6">
-            Record a session or upload a .tantrica file to get started.
+            Record a session or upload a .scrim file to get started.
           </p>
           <div className="flex gap-4 justify-center">
             <Link
