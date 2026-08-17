@@ -1,15 +1,18 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { getMaterialFileIcon } from 'file-extension-icon-js';
 import {
   ScrimPlayer,
+  type PlayerFiles,
   type ScrimForkContent,
   type ScrimForkDraft,
   type ScrimForkEdits,
   type ScrimForkMarker,
 } from '@thisisayande/openscrim-react';
 import { useThemeBase } from '@/hooks/useThemeBase';
+import PlaygroundPlaybackShell from '@/components/playground/PlaygroundPlaybackShell';
 import {
   createFork,
   deleteFork as deleteForkFromStorage,
@@ -28,6 +31,7 @@ const DEMO_RECORDING_ID = 'landing-demo';
 export default function LiveDemoSection() {
   const themeBase = useThemeBase();
   const [forks, setForks] = useState<ScrimForkMarker[]>([]);
+  const [files, setFiles] = useState<Record<string, string>>({});
 
   useEffect(() => {
     getForks(DEMO_RECORDING_ID)
@@ -48,7 +52,10 @@ export default function LiveDemoSection() {
         files: draft.files,
         activePath: draft.activePath ?? undefined,
       });
-      const marker: ScrimForkMarker = { id: fork.id, timestamp: fork.timestamp };
+      const marker: ScrimForkMarker = {
+        id: fork.id,
+        timestamp: fork.timestamp,
+      };
       setForks((prev) =>
         [...prev, marker].sort((a, b) => a.timestamp - b.timestamp)
       );
@@ -85,6 +92,11 @@ export default function LiveDemoSection() {
     setForks((prev) => prev.filter((f) => f.id !== id));
   }, []);
 
+  const handleFilesChange = useCallback(
+    (f: PlayerFiles) => setFiles(f.files),
+    []
+  );
+
   return (
     <section
       className="py-16"
@@ -93,7 +105,7 @@ export default function LiveDemoSection() {
         paddingRight: 'var(--content-offset)',
       }}
     >
-      <div className="text-center mb-10">
+      {/* <div className="text-center mb-10">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
           See it in action
         </h2>
@@ -101,32 +113,48 @@ export default function LiveDemoSection() {
           A real recorded session, playing live. Hit Fork at any point to
           branch the code yourself — no sign-up required.
         </p>
-      </div>
+      </div> */}
 
       <div className="rounded-xl overflow-hidden border border-border shadow-xl">
-        <ScrimPlayer
-          src="/Demo.scrim"
-          autoplay
-          height="520px"
-          theme={themeBase}
-          sidebarWidth="16rem"
-          renderFileIcon={(name) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={getMaterialFileIcon(name)}
-              alt={name}
-              width={18}
-              height={18}
-              style={{ opacity: 0.9 }}
-            />
-          )}
-          forks={forks}
-          onCreateFork={handleCreateFork}
-          onSaveFork={handleSaveFork}
-          onOpenFork={handleOpenFork}
-          onDeleteFork={handleDeleteFork}
-          style={{ border: 'none', borderRadius: 0, boxShadow: 'none' }}
-        />
+        <PlaygroundPlaybackShell
+          className="h-[558px]"
+          title="Live demo"
+          showSidebarBrand={Object.keys(files).length > 1}
+          actions={
+            <Link
+              href="/editor"
+              className="flex items-center gap-1.5 px-3 py-1 rounded text-[11px] font-bold tracking-wider text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Open the full playground"
+            >
+              OPEN EDITOR
+            </Link>
+          }
+        >
+          <ScrimPlayer
+            src="/Demo.scrim"
+            autoplay
+            height="100%"
+            theme={themeBase}
+            sidebarWidth="16rem"
+            renderFileIcon={(name) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={getMaterialFileIcon(name)}
+                alt={name}
+                width={18}
+                height={18}
+                style={{ opacity: 0.9 }}
+              />
+            )}
+            forks={forks}
+            onCreateFork={handleCreateFork}
+            onSaveFork={handleSaveFork}
+            onOpenFork={handleOpenFork}
+            onDeleteFork={handleDeleteFork}
+            onFilesChange={handleFilesChange}
+            style={{ border: 'none', borderRadius: 0, boxShadow: 'none' }}
+          />
+        </PlaygroundPlaybackShell>
       </div>
     </section>
   );

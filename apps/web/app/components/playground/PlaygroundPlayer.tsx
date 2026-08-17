@@ -23,7 +23,7 @@ import {
   getForks,
   updateForkEdits,
 } from '@/lib/forkStorage';
-import { BrandMark, SidebarBrandBackdrop } from '@/components/BrandBackdrop';
+import PlaygroundPlaybackShell from '@/components/playground/PlaygroundPlaybackShell';
 import { CODE_ROOT } from '@/components/playground/fileStore';
 import FloatingPreviewWindow from '@/components/playground/FloatingPreviewWindow';
 
@@ -143,20 +143,14 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-background text-foreground font-sans">
-      <div className="flex items-center justify-between flex-shrink-0 h-[38px] px-4 bg-background border-b border-border shadow-sm z-10">
-        <div className="flex items-center gap-2 text-[13px] min-w-0">
-          <span className="text-muted-foreground font-medium">Playground</span>
-          <span className="text-muted-foreground font-light">/</span>
-          <span className="font-semibold text-foreground tracking-wide truncate max-w-64">
-            {session?.title ?? 'Loading…'}
-          </span>
-          <span className="ml-2 px-2 py-0.5 rounded bg-accent text-accent-foreground text-[10px] font-bold uppercase tracking-widest">
-            {isForking ? 'Forking' : 'Playback'}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
+    <PlaygroundPlaybackShell
+      className="h-screen"
+      title={session?.title ?? 'Loading…'}
+      badge={isForking ? 'Forking' : 'Playback'}
+      showSidebarBrand={Object.keys(files).length > 1}
+      containerRef={playAreaRef}
+      actions={
+        <>
           <button
             onClick={() => setIsPreviewOpen((v) => !v)}
             className={`flex items-center justify-center w-7 h-7 rounded hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
@@ -174,53 +168,40 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
             <X size={13} />
             EXIT
           </Link>
-        </div>
-      </div>
-
-      <div ref={playAreaRef} className="relative flex-grow min-h-0 overflow-hidden bg-background">
-        {Object.keys(files).length > 1 && (
-          <>
-            <div className="pointer-events-none absolute inset-y-0 left-0 z-0 w-64 overflow-hidden bg-sidebar">
-              <SidebarBrandBackdrop />
-            </div>
-            <div className="pointer-events-none absolute top-0 left-0 z-30 flex h-[38px] items-center px-4">
-              <BrandMark className="pointer-events-auto" />
-            </div>
-          </>
+        </>
+      }
+    >
+      <ScrimPlayer
+        session={session ?? undefined}
+        height="100%"
+        theme={themeBase}
+        sidebarWidth="16rem"
+        renderFileIcon={(name) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={getMaterialFileIcon(name)}
+            alt={name}
+            width={18}
+            height={18}
+            style={{ opacity: 0.9 }}
+          />
         )}
-        <ScrimPlayer
-          session={session ?? undefined}
-          height="100%"
-          theme={themeBase}
-          sidebarWidth="16rem"
-          renderFileIcon={(name) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={getMaterialFileIcon(name)}
-              alt={name}
-              width={18}
-              height={18}
-              style={{ opacity: 0.9 }}
-            />
-          )}
-          forks={forks}
-          onCreateFork={handleCreateFork}
-          onSaveFork={handleSaveFork}
-          onOpenFork={handleOpenFork}
-          onDeleteFork={handleDeleteFork}
-          onFilesChange={handleFilesChange}
-          onForkModeChange={setIsForking}
-          style={{ border: 'none', borderRadius: 0, boxShadow: 'none' }}
-        />
+        forks={forks}
+        onCreateFork={handleCreateFork}
+        onSaveFork={handleSaveFork}
+        onOpenFork={handleOpenFork}
+        onDeleteFork={handleDeleteFork}
+        onFilesChange={handleFilesChange}
+        onForkModeChange={setIsForking}
+        style={{ border: 'none', borderRadius: 0, boxShadow: 'none' }}
+      />
 
-        {/* Browser preview — live output of the played-back (or forked) code */}
-        <FloatingPreviewWindow
-          store={{ files, dirs: [CODE_ROOT] }}
-          open={isPreviewOpen}
-          onClose={() => setIsPreviewOpen(false)}
-          containerRef={playAreaRef}
-        />
-      </div>
-    </div>
+      <FloatingPreviewWindow
+        store={{ files, dirs: [CODE_ROOT] }}
+        open={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        containerRef={playAreaRef}
+      />
+    </PlaygroundPlaybackShell>
   );
 }
