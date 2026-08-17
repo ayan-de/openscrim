@@ -176,7 +176,7 @@ export const OPENSCRIM_CSS = `
 .os-btn:active { transform: scale(0.94); }
 .os-btn-primary { background: var(--os-accent); color: var(--os-accent-contrast); }
 .os-btn-primary:hover { background: color-mix(in srgb, var(--os-accent) 88%, #000); }
-.os-btn-round { width: 34px; height: 34px; min-width: 34px; padding: 0; border-radius: 999px; }
+.os-btn-round { width: 34px; height: 34px; min-width: 34px; padding: 0; border-radius: 6px; }
 .os-btn[disabled] { opacity: 0.4; cursor: default; transform: none; }
 .os-time {
   font-variant-numeric: tabular-nums;

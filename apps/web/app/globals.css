@@ -198,3 +198,21 @@
     letter-spacing: var(--tracking-normal);
   }
 }
+
+/*
+ * SDK components (<ScrimPlayer>, <ScrimRecorder>) ship their own default
+ * palette on `.openscrim`. Overriding those tokens here — once, at the root
+ * stylesheet — makes every instance in this app follow the site theme
+ * automatically instead of each call site passing its own theme object.
+ * Doubled selector for specificity: the SDK injects its default rule into
+ * <head> on mount (after this stylesheet), so source order alone can't be
+ * relied on to win.
+ */
+.openscrim.openscrim {
+  --os-accent: var(--primary);
+  --os-bg: var(--background);
+  --os-surface: var(--card);
+  --os-border: var(--border);
+  --os-text: var(--foreground);
+  --os-muted: var(--muted-foreground);
+}
