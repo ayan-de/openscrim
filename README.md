@@ -16,14 +16,14 @@ Platforms like Scrimba proved that the best way to teach code isn't video — it
 - ⏯️ **True seek** — jump anywhere instantly; playback is deterministic event replay, not decoded frames.
 - 🍴 **Forkable** — pause at any timestamp and the viewer gets the instructor's exact code, editable, in the same editor.
 - 📄 **Selectable, real text** — viewers can copy code straight out of the "video".
-- 🔓 **Open format** — recordings are portable `.tantrica` files (gzipped JSON with a fast-readable metadata header). No lock-in.
+- 🔓 **Open format** — recordings are portable `.scrim` files (gzipped JSON with a fast-readable metadata header). No lock-in.
 
 ## Embed a player (no build tools)
 
 One div + one script tag — Monaco is lazy-loaded from a CDN, viewers get play/pause/seek/speed and can pause to edit the code:
 
 ```html
-<div data-openscrim-src="/recordings/intro.tantrica" data-height="420px"></div>
+<div data-openscrim-src="/recordings/intro.scrim" data-height="420px"></div>
 <script src="https://cdn.jsdelivr.net/npm/@thisisayande/openscrim-player/dist/embed.global.js"></script>
 ```
 
@@ -62,7 +62,7 @@ engine.play();
 
 | Package | What it is |
 | --- | --- |
-| [`@thisisayande/openscrim-core`](https://www.npmjs.com/package/@thisisayande/openscrim-core) | Framework-agnostic engine: event model, `RecordingManager`, `PlaybackEngine`, compression, `.tantrica` file format. No React, no Monaco. |
+| [`@thisisayande/openscrim-core`](https://www.npmjs.com/package/@thisisayande/openscrim-core) | Framework-agnostic engine: event model, `RecordingManager`, `PlaybackEngine`, compression, `.scrim` file format. No React, no Monaco. |
 | [`@thisisayande/openscrim-monaco`](https://www.npmjs.com/package/@thisisayande/openscrim-monaco) | Monaco binding: `MonacoRecorder` + `attachPlayback`. Monaco is a type-only peer dep — adds no editor copy to your bundle. |
 | [`@thisisayande/openscrim-player`](https://www.npmjs.com/package/@thisisayande/openscrim-player) | Drop-in player: script-tag embed or `createPlayer(div, { src })`. Loads Monaco from a CDN at runtime; ~24 KB bundle. |
 

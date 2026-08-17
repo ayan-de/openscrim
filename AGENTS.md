@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-OpenScrim records coding sessions in a Monaco editor (keystrokes, cursor moves, content changes as timestamped events) and plays them back like a video, with seek, speed control, and the ability to "fork" a playback at any point into an editable session. Pnpm (v9) + Turborepo monorepo. The project was previously named **Tantrica** — that name still appears in the `.tantrica` file format, `docs/`, and some identifiers.
+OpenScrim records coding sessions in a Monaco editor (keystrokes, cursor moves, content changes as timestamped events) and plays them back like a video, with seek, speed control, and the ability to "fork" a playback at any point into an editable session. Pnpm (v9) + Turborepo monorepo. The project was previously named **Tantrica** — that name still lingers in `docs/`, some local-storage keys, and the old `.tantrica` file format, which was renamed to `.scrim`.
 
 Note: `AGENTS.md` is stale — it references a NestJS `apps/api` that was removed when the backend was migrated into Next.js API routes (commit `92fa465`). Trust this file and the code over `AGENTS.md`.
 
@@ -33,13 +33,13 @@ There are no tests anywhere in the repo yet.
 - `RecordingManager.ts` — captures editor events into a session buffer.
 - `PlaybackEngine.ts` — schedules and replays events; emits to consumers via handler callbacks (Observer pattern).
 - `compression.ts` — `compressEvents`/`decompressEvents` (delta encoding, cursor dedup).
-- `format.ts` — the `.tantrica` file format: JSON + gzip with magic bytes; `sessionToTantricaFile`, `readTantricaBuffer`, etc.
+- `format.ts` — the `.scrim` file format: JSON + gzip with magic bytes; `sessionToScrimFile`, `readScrimBuffer`, etc.
 
 ### apps/web — Next.js 15 (App Router, React 19, Tailwind v4), frontend AND backend
 
 Path alias `@/*` → `apps/web/app/*`. Route groups:
 
-- `(main)` — landing, `/dashboard` (recording library), `/upload` (.tantrica upload)
+- `(main)` — landing, `/dashboard` (recording library), `/upload` (.scrim upload)
 - `(studio)` — `/record` (recording studio) and `/view` (playback + fork UI)
 - `/r/[id]` — public share/player page
 - `api/` — the backend (migrated from a former NestJS app):
