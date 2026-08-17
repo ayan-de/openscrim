@@ -32,11 +32,12 @@ export default function Navbar({ mainText }: NavbarProps) {
           className="relative flex items-center gap-2 px-3 py-1 rounded-full overflow-hidden group select-none"
         >
           <div
-            className="sidebar-stage-backdrop pointer-events-none absolute inset-x-0 top-0 z-0 h-full overflow-hidden opacity-80 group-hover:opacity-100 transition-opacity [--sidebar-stage-fade:var(--card)]"
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-full opacity-90 group-hover:opacity-100 transition-opacity"
           >
             <BrandBackdrop />
           </div>
-          <BrandMark className="pointer-events-none" label={mainText} linked={false} />
+          <BrandMark className="pointer-events-none relative z-10" label={mainText} linked={false} />
         </Link>
         <div className="flex gap-1 md:gap-2 items-center">
           {isLoading ? (
