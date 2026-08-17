@@ -59,6 +59,19 @@
   --shadow-offset-y: 1px;
   --letter-spacing: 0em;
   --content-offset: max(48px, calc((100vw - 1440px) / 2));
+
+  /* Sidebar brand backdrop — rose blueprint palette matching the site's pink primary */
+  --stage-art-top: oklch(0.760675 0.141361 348.019);
+  --stage-art-mid: oklch(0.588093 0.188832 353.138);
+  --stage-art-bottom: oklch(0.383959 0.135096 348.656);
+  --stage-art-highlight: oklch(0.949689 0.034241 339.171);
+  --stage-art-secondary: oklch(0.763402 0.163836 352.525);
+  --stage-art-tertiary: oklch(0.70819 0.180285 311.949);
+  --stage-art-line: oklch(0.952158 0.034194 336.179);
+  --stage-art-celeste-highlight: var(--stage-art-highlight);
+  --stage-art-celeste-secondary: var(--stage-art-secondary);
+  --stage-art-violet-highlight: var(--stage-art-highlight);
+  --stage-art-grid-line: var(--stage-art-line);
 }
 
 .dark {
@@ -116,6 +129,18 @@
   --shadow-offset-y: 1px;
   --letter-spacing: 0em;
   --spacing: 0.25rem;
+
+  --stage-art-top: oklch(0.540689 0.143665 347.587);
+  --stage-art-mid: oklch(0.396586 0.126592 347.6);
+  --stage-art-bottom: oklch(0.249959 0.079694 340.523);
+  --stage-art-highlight: oklch(0.921297 0.051708 343.229);
+  --stage-art-secondary: oklch(0.667398 0.165674 352.549);
+  --stage-art-tertiary: oklch(0.609315 0.163722 306.315);
+  --stage-art-line: oklch(0.945349 0.036045 341.433);
+  --stage-art-celeste-highlight: var(--stage-art-highlight);
+  --stage-art-celeste-secondary: var(--stage-art-secondary);
+  --stage-art-violet-highlight: var(--stage-art-highlight);
+  --stage-art-grid-line: var(--stage-art-line);
 }
 
 @theme inline {
@@ -208,6 +233,33 @@
  * <head> on mount (after this stylesheet), so source order alone can't be
  * relied on to win.
  */
+/*
+ * t3code sidebar-stage-backdrop: vertical mask plus a wash that blends the
+ * art into `--sidebar` so the grid fades downward instead of cutting off.
+ */
+@utility sidebar-stage-backdrop {
+  --stage-fade: var(--sidebar-stage-fade, var(--sidebar));
+  mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 92%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 92%);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      transparent 28%,
+      color-mix(in srgb, var(--stage-fade) 10%, transparent) 40%,
+      color-mix(in srgb, var(--stage-fade) 30%, transparent) 52%,
+      color-mix(in srgb, var(--stage-fade) 58%, transparent) 64%,
+      color-mix(in srgb, var(--stage-fade) 82%, transparent) 75%,
+      color-mix(in srgb, var(--stage-fade) 96%, transparent) 85%,
+      var(--stage-fade) 93%
+    );
+  }
+}
+
 .openscrim.openscrim {
   --os-accent: var(--primary);
   --os-bg: var(--background);
@@ -215,4 +267,17 @@
   --os-border: var(--border);
   --os-text: var(--foreground);
   --os-muted: var(--muted-foreground);
+  /* Let the playground's sidebar-stage art show through the file tree. */
+  background: transparent;
+}
+
+.openscrim.openscrim .os-main {
+  background: var(--os-surface);
+}
+
+.openscrim.openscrim .os-sidebar {
+  position: relative;
+  z-index: 20;
+  background: transparent;
+  padding-top: 38px;
 }
