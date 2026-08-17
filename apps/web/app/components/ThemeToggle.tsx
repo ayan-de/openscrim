@@ -3,40 +3,30 @@
 import * as React from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useThemeBase } from '@/hooks/useThemeBase';
 
 const STORAGE_KEY = 'openscrim-theme';
 
-type ResolvedTheme = 'light' | 'dark';
-
-function getInitialTheme(): ResolvedTheme {
-  if (typeof document === 'undefined') return 'light';
-  return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-}
-
 export function ThemeToggle() {
-  const [theme, setTheme] = React.useState<ResolvedTheme>('light');
+  const theme = useThemeBase();
   const [mounted, setMounted] = React.useState(false);
 
-  // Pick up the class that the no-FOUC inline script in <head> already applied,
-  // so the icon matches the rendered colours on first paint.
+  // The no-FOUC inline script in <head> already applies the class before
+  // hydration; this just delays the icon until the client can read it.
   React.useEffect(() => {
-    setTheme(getInitialTheme());
     setMounted(true);
   }, []);
 
   const toggle = React.useCallback(() => {
-    setTheme((prev) => {
-      const next: ResolvedTheme = prev === 'dark' ? 'light' : 'dark';
-      const root = document.documentElement;
-      root.classList.toggle('dark', next === 'dark');
-      try {
-        localStorage.setItem(STORAGE_KEY, next);
-      } catch {
-        // Storage may be unavailable (private mode, embedded webview); ignore.
-      }
-      return next;
-    });
-  }, []);
+    const next = theme === 'dark' ? 'light' : 'dark';
+    const root = document.documentElement;
+    root.classList.toggle('dark', next === 'dark');
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // Storage may be unavailable (private mode, embedded webview); ignore.
+    }
+  }, [theme]);
 
   return (
     <Button
