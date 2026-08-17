@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
-  parseTantricaBytes,
-  readTantricaBuffer,
-  sessionToTantricaFile,
-  tantricaFileToSession,
-  writeTantricaBuffer,
+  parseScrimBytes,
+  readScrimBuffer,
+  sessionToScrimFile,
+  scrimFileToSession,
+  writeScrimBuffer,
 } from '../format.js';
 import { makeSession } from './helpers.js';
 
-describe('sessionToTantricaFile / tantricaFileToSession', () => {
+describe('sessionToScrimFile / scrimFileToSession', () => {
   it('round-trips a session without losing data', () => {
     const session = makeSession();
-    const file = sessionToTantricaFile(session);
-    const back = tantricaFileToSession(file);
+    const file = sessionToScrimFile(session);
+    const back = scrimFileToSession(file);
 
     expect(back.id).toBe(session.id);
     expect(back.title).toBe(session.title);
@@ -31,7 +31,7 @@ describe('sessionToTantricaFile / tantricaFileToSession', () => {
 
   it('records event count and version in metadata', () => {
     const session = makeSession();
-    const file = sessionToTantricaFile(session);
+    const file = sessionToScrimFile(session);
 
     expect(file.version).toBe(1);
     expect(file.metadata.eventCount).toBe(session.events.length);
@@ -39,25 +39,25 @@ describe('sessionToTantricaFile / tantricaFileToSession', () => {
   });
 });
 
-describe('writeTantricaBuffer / readTantricaBuffer', () => {
+describe('writeScrimBuffer / readScrimBuffer', () => {
   it('round-trips through the binary format', () => {
-    const file = sessionToTantricaFile(makeSession());
-    const buffer = writeTantricaBuffer(file);
-    const back = readTantricaBuffer(buffer);
+    const file = sessionToScrimFile(makeSession());
+    const buffer = writeScrimBuffer(file);
+    const back = readScrimBuffer(buffer);
 
     expect(back).toEqual(file);
   });
 
-  it('starts with TNTC magic bytes and format version 1', () => {
-    const buffer = writeTantricaBuffer(sessionToTantricaFile(makeSession()));
+  it('starts with SCRM magic bytes and format version 1', () => {
+    const buffer = writeScrimBuffer(sessionToScrimFile(makeSession()));
 
-    expect(buffer.subarray(0, 4).toString('ascii')).toBe('TNTC');
+    expect(buffer.subarray(0, 4).toString('ascii')).toBe('SCRM');
     expect(buffer.readUInt16BE(4)).toBe(1);
   });
 
   it('exposes metadata in an uncompressed header readable without gunzip', () => {
-    const file = sessionToTantricaFile(makeSession());
-    const buffer = writeTantricaBuffer(file);
+    const file = sessionToScrimFile(makeSession());
+    const buffer = writeScrimBuffer(file);
 
     const headerLength = buffer.readUInt32BE(6);
     const header = JSON.parse(
@@ -73,46 +73,46 @@ describe('writeTantricaBuffer / readTantricaBuffer', () => {
       initialContent: 'console.log("héllo 🌍");\n',
       finalContent: 'console.log("héllo 🌍");\n// done ✅\n',
     });
-    const file = sessionToTantricaFile(session);
-    const back = readTantricaBuffer(writeTantricaBuffer(file));
+    const file = sessionToScrimFile(session);
+    const back = readScrimBuffer(writeScrimBuffer(file));
 
     expect(back).toEqual(file);
   });
 
   it('falls back to plain JSON when the buffer has no magic bytes', () => {
-    const file = sessionToTantricaFile(makeSession());
+    const file = sessionToScrimFile(makeSession());
     const jsonBuffer = Buffer.from(JSON.stringify(file), 'utf-8');
 
-    expect(readTantricaBuffer(jsonBuffer)).toEqual(file);
+    expect(readScrimBuffer(jsonBuffer)).toEqual(file);
   });
 
-  it('parseTantricaBytes reads the binary format without Buffer/zlib', async () => {
-    const file = sessionToTantricaFile(makeSession({ title: 'browser 🎬' }));
-    const buffer = writeTantricaBuffer(file);
+  it('parseScrimBytes reads the binary format without Buffer/zlib', async () => {
+    const file = sessionToScrimFile(makeSession({ title: 'browser 🎬' }));
+    const buffer = writeScrimBuffer(file);
     const bytes = new Uint8Array(buffer);
 
-    expect(await parseTantricaBytes(bytes)).toEqual(file);
+    expect(await parseScrimBytes(bytes)).toEqual(file);
   });
 
-  it('parseTantricaBytes falls back to plain JSON', async () => {
-    const file = sessionToTantricaFile(makeSession());
+  it('parseScrimBytes falls back to plain JSON', async () => {
+    const file = sessionToScrimFile(makeSession());
     const bytes = new TextEncoder().encode(JSON.stringify(file));
 
-    expect(await parseTantricaBytes(bytes)).toEqual(file);
+    expect(await parseScrimBytes(bytes)).toEqual(file);
   });
 
-  it('parseTantricaBytes handles byte views with a nonzero offset', async () => {
-    const file = sessionToTantricaFile(makeSession());
-    const buffer = writeTantricaBuffer(file);
+  it('parseScrimBytes handles byte views with a nonzero offset', async () => {
+    const file = sessionToScrimFile(makeSession());
+    const buffer = writeScrimBuffer(file);
     const padded = new Uint8Array(buffer.length + 8);
     padded.set(buffer, 8);
     const view = padded.subarray(8);
 
-    expect(await parseTantricaBytes(view)).toEqual(file);
+    expect(await parseScrimBytes(view)).toEqual(file);
   });
 
   it('round-trips an empty session', () => {
-    const file = sessionToTantricaFile(
+    const file = sessionToScrimFile(
       makeSession({
         events: [],
         files: undefined,
@@ -121,7 +121,7 @@ describe('writeTantricaBuffer / readTantricaBuffer', () => {
         finalContent: '',
       })
     );
-    const back = readTantricaBuffer(writeTantricaBuffer(file));
+    const back = readScrimBuffer(writeScrimBuffer(file));
 
     expect(back).toEqual(file);
   });

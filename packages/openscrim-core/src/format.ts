@@ -2,7 +2,7 @@ import type { RecordingEvent, RecordingSession } from './types.js';
 
 const FORMAT_VERSION = 1;
 
-export interface TantricaFile {
+export interface ScrimFile {
   version: 1;
   metadata: {
     id: string;
@@ -28,7 +28,7 @@ export interface TantricaFile {
   events: RecordingEvent[];
 }
 
-export function sessionToTantricaFile(session: RecordingSession): TantricaFile {
+export function sessionToScrimFile(session: RecordingSession): ScrimFile {
   return {
     version: 1,
     metadata: {
@@ -55,7 +55,7 @@ export function sessionToTantricaFile(session: RecordingSession): TantricaFile {
   };
 }
 
-export function tantricaFileToSession(file: TantricaFile): RecordingSession {
+export function scrimFileToSession(file: ScrimFile): RecordingSession {
   return {
     id: file.metadata.id,
     title: file.metadata.title,
@@ -76,7 +76,7 @@ export function tantricaFileToSession(file: TantricaFile): RecordingSession {
   };
 }
 
-export function writeTantricaBuffer(file: TantricaFile): Buffer {
+export function writeScrimBuffer(file: ScrimFile): Buffer {
   const jsonStr = JSON.stringify(file);
   const compressed = gzipSync(Buffer.from(jsonStr, 'utf-8'));
 
@@ -89,7 +89,7 @@ export function writeTantricaBuffer(file: TantricaFile): Buffer {
   headerLen.writeUInt32BE(headerBuf.length, 0);
 
   return Buffer.concat([
-    Buffer.from('TNTC', 'ascii'),
+    Buffer.from('SCRM', 'ascii'),
     version,
     headerLen,
     headerBuf,
@@ -97,12 +97,12 @@ export function writeTantricaBuffer(file: TantricaFile): Buffer {
   ]);
 }
 
-export function readTantricaBuffer(buffer: Buffer): TantricaFile {
+export function readScrimBuffer(buffer: Buffer): ScrimFile {
   if (
-    buffer[0] !== 0x54 ||
-    buffer[1] !== 0x4e ||
-    buffer[2] !== 0x54 ||
-    buffer[3] !== 0x43
+    buffer[0] !== 0x53 ||
+    buffer[1] !== 0x43 ||
+    buffer[2] !== 0x52 ||
+    buffer[3] !== 0x4d
   ) {
     return JSON.parse(buffer.toString('utf-8'));
   }
@@ -114,18 +114,18 @@ export function readTantricaBuffer(buffer: Buffer): TantricaFile {
 }
 
 /**
- * Parses a `.tantrica` payload (binary or plain JSON) using Web APIs only —
+ * Parses a `.scrim` payload (binary or plain JSON) using Web APIs only —
  * works in browsers and Node 18+, no Buffer/zlib required. Async because
  * browser gzip decompression (DecompressionStream) is stream-based.
  */
-export async function parseTantricaBytes(
+export async function parseScrimBytes(
   bytes: Uint8Array
-): Promise<TantricaFile> {
+): Promise<ScrimFile> {
   if (
-    bytes[0] !== 0x54 ||
-    bytes[1] !== 0x4e ||
-    bytes[2] !== 0x54 ||
-    bytes[3] !== 0x43
+    bytes[0] !== 0x53 ||
+    bytes[1] !== 0x43 ||
+    bytes[2] !== 0x52 ||
+    bytes[3] !== 0x4d
   ) {
     return JSON.parse(new TextDecoder().decode(bytes));
   }
