@@ -8,6 +8,7 @@ import type * as monacoType from 'monaco-editor';
 import { FaCircle, FaPlay, FaStop } from 'react-icons/fa';
 import { useRecorder } from '@thisisayande/openscrim-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useThemeBase } from '@/hooks/useThemeBase';
 import { useLoading } from '@/context/LoadingContext';
 import { getRecordingStorage } from '@/lib/storage';
 import { formatDuration } from '@/lib/formatDuration';
@@ -56,6 +57,7 @@ function EditorPageContent() {
 }
 
 function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
+  const themeBase = useThemeBase();
   const starter = starterFilesFor(template);
   const [store, setStore] = useState<PlaygroundFiles>(starter.store);
   const [openDirs, setOpenDirs] = useState<Set<string>>(
@@ -708,7 +710,7 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
                     if (activeFile === previewFile) handlePinFile(activeFile);
                   }}
                   onMount={handleEditorMount}
-                  theme="vs-dark"
+                  theme={themeBase === 'dark' ? 'vs-dark' : 'vs'}
                   options={editorOptions}
                   className="pt-2"
                 />

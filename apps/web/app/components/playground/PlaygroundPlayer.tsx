@@ -14,6 +14,7 @@ import {
   type ScrimForkMarker,
 } from '@thisisayande/openscrim-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useThemeBase } from '@/hooks/useThemeBase';
 import { getRecordingStorage } from '@/lib/storage';
 import {
   createFork,
@@ -37,6 +38,7 @@ interface PlaygroundPlayerProps {
  */
 export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
   const { isAuthenticated } = useAuth();
+  const themeBase = useThemeBase();
 
   const [session, setSession] = useState<RecordingSession | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -187,6 +189,7 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
         <ScrimPlayer
           session={session ?? undefined}
           height="100%"
+          theme={themeBase}
           sidebarWidth="16rem"
           renderFileIcon={(name) => (
             // eslint-disable-next-line @next/next/no-img-element
