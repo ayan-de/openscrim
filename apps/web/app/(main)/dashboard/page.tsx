@@ -77,7 +77,7 @@ export default function DashboardPage() {
   if (authLoading) {
     return (
       <div className="flex-grow flex items-center justify-center px-4 py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
@@ -86,12 +86,12 @@ export default function DashboardPage() {
     return (
       <div className="flex-grow flex items-center justify-center px-4 py-20">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-white mb-4">
+          <h2 className="text-2xl font-semibold text-foreground mb-4">
             Sign in to view your dashboard
           </h2>
           <Link
             href="/"
-            className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+            className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
           >
             Go Home
           </Link>
@@ -106,14 +106,14 @@ export default function DashboardPage() {
     <div className="flex-grow px-4 md:px-6 py-8 max-w-6xl mx-auto w-full">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-          <p className="text-white/60 mt-1">
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
             {total} recording{total !== 1 ? 's' : ''}
           </p>
         </div>
         <Link
           href="/upload"
-          className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+          className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
         >
           Upload .scrim
         </Link>
@@ -121,26 +121,26 @@ export default function DashboardPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       ) : recordings.length === 0 ? (
         <div className="text-center py-20">
-          <h3 className="text-xl font-medium text-white mb-4">
+          <h3 className="text-xl font-medium text-foreground mb-4">
             No recordings yet
           </h3>
-          <p className="text-white/60 mb-6">
+          <p className="text-muted-foreground mb-6">
             Record a session or upload a .scrim file to get started.
           </p>
           <div className="flex gap-4 justify-center">
             <Link
               href="/record"
-              className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+              className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
             >
               Start Recording
             </Link>
             <Link
               href="/upload"
-              className="border border-white/30 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors"
+              className="border border-border text-foreground px-6 py-3 rounded-lg font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               Upload File
             </Link>
@@ -152,20 +152,20 @@ export default function DashboardPage() {
             {recordings.map((recording) => (
               <div
                 key={recording._id}
-                className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-5 flex items-center justify-between"
+                className="bg-card backdrop-blur-sm border border-border rounded-lg p-5 flex items-center justify-between"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-lg font-semibold text-white truncate">
+                    <h3 className="text-lg font-semibold text-card-foreground truncate">
                       {recording.title}
                     </h3>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${recording.isPublic ? 'bg-green-500/20 text-green-300' : 'bg-gray-500/20 text-gray-400'}`}
+                      className={`text-xs px-2 py-0.5 rounded-full ${recording.isPublic ? 'bg-green-500/20 text-green-700 dark:text-green-300' : 'bg-muted text-muted-foreground'}`}
                     >
                       {recording.isPublic ? 'Public' : 'Private'}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-white/50">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span>{recording.language}</span>
                     <span>{formatDuration(recording.duration, 'short')}</span>
                     <span>{recording.eventCount} events</span>
@@ -179,19 +179,19 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2 ml-4">
                   <Link
                     href={`/r/${recording._id}`}
-                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+                    className="px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 text-sm rounded transition-colors"
                   >
                     Play
                   </Link>
                   <button
                     onClick={() => handleTogglePublic(recording)}
-                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-sm rounded transition-colors"
+                    className="px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground text-sm rounded transition-colors"
                   >
                     {recording.isPublic ? 'Make Private' : 'Make Public'}
                   </button>
                   <button
                     onClick={() => handleDelete(recording._id)}
-                    className="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/40 text-red-300 text-sm rounded transition-colors"
+                    className="px-3 py-1.5 bg-destructive/20 hover:bg-destructive/40 text-destructive text-sm rounded transition-colors"
                   >
                     Delete
                   </button>
@@ -205,17 +205,17 @@ export default function DashboardPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 bg-white/10 text-white rounded disabled:opacity-50"
+                className="px-4 py-2 bg-muted text-foreground rounded disabled:opacity-50"
               >
                 Prev
               </button>
-              <span className="text-white/60">
+              <span className="text-muted-foreground">
                 Page {page} of {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 bg-white/10 text-white rounded disabled:opacity-50"
+                className="px-4 py-2 bg-muted text-foreground rounded disabled:opacity-50"
               >
                 Next
               </button>

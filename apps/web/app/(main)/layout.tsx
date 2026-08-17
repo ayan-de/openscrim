@@ -9,7 +9,7 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="min-h-screen bg-[#20201e] flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar mainText="OpenScrim" />
       {children}
       <Footer />

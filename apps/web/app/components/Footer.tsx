@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="text-center py-4 md:py-6 text-gray-300 px-4 mt-auto">
+    <footer className="text-center py-4 md:py-6 text-muted-foreground px-4 mt-auto">
       <p className="text-sm md:text-base">
         Built with Next.js, Monaco Editor, and TypeScript by{' '}
         <a

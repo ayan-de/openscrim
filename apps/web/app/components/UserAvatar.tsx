@@ -32,11 +32,11 @@ export default function UserAvatar({
           alt={`${user.firstName} ${user.lastName}`}
           width={32}
           height={32}
-          className="w-full h-full rounded-full object-cover border-2 border-white/20 cursor-pointer"
+          className="w-full h-full rounded-full object-cover border-2 border-border cursor-pointer"
           referrerPolicy="no-referrer"
         />
       ) : (
-        <div className="w-full h-full rounded-full bg-white/20 border-2 border-white/20 flex items-center justify-center text-white font-semibold cursor-pointer">
+        <div className="w-full h-full rounded-full bg-muted border-2 border-border flex items-center justify-center text-foreground font-semibold cursor-pointer">
           {getInitials(user.firstName, user.lastName)}
         </div>
       )}

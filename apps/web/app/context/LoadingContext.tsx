@@ -102,12 +102,12 @@ export function LoadingProvider({ children }: LoadingProviderProps) {
 
           {/* Loading Card */}
           {isLoading && (
-            <div className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-8 text-center max-w-sm mx-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <h2 className="text-xl font-semibold text-white mb-2">
+            <div className="relative bg-card backdrop-blur-md border border-border rounded-lg p-8 text-center max-w-sm mx-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <h2 className="text-xl font-semibold text-card-foreground mb-2">
                 {loadingMessage}
               </h2>
-              <p className="text-white/70">
+              <p className="text-muted-foreground">
                 Please wait while we complete your request.
               </p>
             </div>
@@ -115,8 +115,8 @@ export function LoadingProvider({ children }: LoadingProviderProps) {
 
           {/* Success Card */}
           {notification.type === 'success' && (
-            <div className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-8 text-center max-w-sm mx-4">
-              <div className="text-green-400 mb-4">
+            <div className="relative bg-card backdrop-blur-md border border-border rounded-lg p-8 text-center max-w-sm mx-4">
+              <div className="text-green-500 mb-4">
                 <svg
                   className="h-12 w-12 mx-auto"
                   fill="currentColor"
@@ -129,17 +129,17 @@ export function LoadingProvider({ children }: LoadingProviderProps) {
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-white mb-2">
+              <h2 className="text-xl font-semibold text-card-foreground mb-2">
                 Success!
               </h2>
-              <p className="text-white/70">{notification.message}</p>
+              <p className="text-muted-foreground">{notification.message}</p>
             </div>
           )}
 
           {/* Error Card */}
           {notification.type === 'error' && (
-            <div className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-8 text-center max-w-sm mx-4">
-              <div className="text-red-400 mb-4">
+            <div className="relative bg-card backdrop-blur-md border border-border rounded-lg p-8 text-center max-w-sm mx-4">
+              <div className="text-destructive mb-4">
                 <svg
                   className="h-12 w-12 mx-auto"
                   fill="currentColor"
@@ -147,13 +147,13 @@ export function LoadingProvider({ children }: LoadingProviderProps) {
                 >
                   <path
                     fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    d="M10 18a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
                     clipRule="evenodd"
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-white mb-2">Error</h2>
-              <p className="text-white/70">{notification.message}</p>
+              <h2 className="text-xl font-semibold text-card-foreground mb-2">Error</h2>
+              <p className="text-muted-foreground">{notification.message}</p>
             </div>
           )}
         </div>

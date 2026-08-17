@@ -46,7 +46,7 @@ export default function UploadPage() {
   if (authLoading) {
     return (
       <div className="flex-grow flex items-center justify-center px-4 py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
@@ -55,12 +55,12 @@ export default function UploadPage() {
     return (
       <div className="flex-grow flex items-center justify-center px-4 py-20">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-white mb-4">
+          <h2 className="text-2xl font-semibold text-foreground mb-4">
             Sign in to upload recordings
           </h2>
           <Link
             href="/"
-            className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+            className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
           >
             Go Home
           </Link>
@@ -71,7 +71,7 @@ export default function UploadPage() {
 
   return (
     <div className="flex-grow px-4 md:px-6 py-8 max-w-2xl mx-auto w-full">
-      <h1 className="text-3xl font-bold text-white mb-8">Upload Recording</h1>
+      <h1 className="text-3xl font-bold text-foreground mb-8">Upload Recording</h1>
 
       <div
         onDragOver={(e) => {
@@ -83,18 +83,18 @@ export default function UploadPage() {
         onClick={() => fileInputRef.current?.click()}
         className={`border-2 border-dashed rounded-xl p-16 text-center cursor-pointer transition-colors ${
           dragActive
-            ? 'border-blue-400 bg-blue-500/10'
-            : 'border-white/30 hover:border-white/50 hover:bg-white/5'
+            ? 'border-primary bg-primary/10'
+            : 'border-border hover:border-foreground/50 hover:bg-muted/50'
         }`}
       >
         <div className="text-4xl mb-4">&#128228;</div>
-        <h3 className="text-xl font-semibold text-white mb-2">
+        <h3 className="text-xl font-semibold text-foreground mb-2">
           Drop your .scrim file here
         </h3>
-        <p className="text-white/60 mb-4">
+        <p className="text-muted-foreground mb-4">
           or click to browse. Accepts .scrim and .json files.
         </p>
-        <span className="inline-block bg-white/10 text-white/80 px-4 py-2 rounded-lg text-sm">
+        <span className="inline-block bg-muted text-foreground px-4 py-2 rounded-lg text-sm">
           Choose File
         </span>
         <input
@@ -106,9 +106,9 @@ export default function UploadPage() {
         />
       </div>
 
-      <div className="mt-8 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-6">
-        <h3 className="font-semibold text-white mb-3">About .scrim files</h3>
-        <p className="text-white/60 text-sm leading-relaxed">
+      <div className="mt-8 bg-card backdrop-blur-sm border border-border rounded-lg p-6">
+        <h3 className="font-semibold text-card-foreground mb-3">About .scrim files</h3>
+        <p className="text-muted-foreground text-sm leading-relaxed">
           .scrim files are compressed recording files created by OpenScrim.
           They contain all editor events (keystrokes, cursor
           movements, content changes) needed to replay a coding session at

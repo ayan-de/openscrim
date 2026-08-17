@@ -52,7 +52,7 @@ export default function Home() {
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full sm:w-auto border-2 border-white/50 bg-transparent backdrop-blur-sm text-white hover:bg-white/10 hover:border-white/70 font-semibold px-6 sm:px-8 md:px-12 py-3 md:py-4 text-base md:text-lg shadow-lg transition-all duration-300 h-12 md:h-14 cursor-pointer"
+                className="w-full sm:w-auto border-2 border-border bg-transparent backdrop-blur-sm text-foreground hover:bg-accent hover:text-accent-foreground hover:border-foreground/70 font-semibold px-6 sm:px-8 md:px-12 py-3 md:py-4 text-base md:text-lg shadow-lg transition-all duration-300 h-12 md:h-14 cursor-pointer"
               >
                 Open Editor
               </Button>
@@ -62,7 +62,7 @@ export default function Home() {
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full sm:w-auto border-2 border-white/50 bg-transparent backdrop-blur-sm text-white hover:bg-white/10 hover:border-white/70 font-semibold px-6 sm:px-8 md:px-12 py-3 md:py-4 text-base md:text-lg shadow-lg transition-all duration-300 h-12 md:h-14 cursor-pointer"
+                className="w-full sm:w-auto border-2 border-border bg-transparent backdrop-blur-sm text-foreground hover:bg-accent hover:text-accent-foreground hover:border-foreground/70 font-semibold px-6 sm:px-8 md:px-12 py-3 md:py-4 text-base md:text-lg shadow-lg transition-all duration-300 h-12 md:h-14 cursor-pointer"
               >
                 <span className="hidden sm:inline">View Recordings</span>
                 <span className="sm:hidden">
@@ -81,10 +81,10 @@ export default function Home() {
       <section className="py-16 px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
               Create Playgrounds
             </h2>
-            <p className="text-white/70 text-base sm:text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
               Coding playgrounds videos on Tantrica are powered by VS Code IDE
               and start within a few seconds. Practice coding while learning for
               free.
