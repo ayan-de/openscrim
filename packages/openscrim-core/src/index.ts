@@ -39,12 +39,12 @@ export type {
 
 export { compressEvents, decompressEvents } from './compression.js';
 
-export type { TantricaFile } from './format.js';
+export type { ScrimFile } from './format.js';
 
 export {
-  sessionToTantricaFile,
-  tantricaFileToSession,
-  writeTantricaBuffer,
-  readTantricaBuffer,
-  parseTantricaBytes,
+  sessionToScrimFile,
+  scrimFileToSession,
+  writeScrimBuffer,
+  readScrimBuffer,
+  parseScrimBytes,
 } from './format.js';
