@@ -3,10 +3,17 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Film, GitFork, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import SloganText from './SloganText';
 import PlaygroundModal from './playgroundCards/PlaygroundModal';
 import { useRecordingCount } from '@/hooks/useRecordingCount';
+
+const TRUST_CHIPS = [
+  { icon: Film, label: 'Scrub like a video' },
+  { icon: GitFork, label: 'Fork any moment' },
+  { icon: Sparkles, label: 'Structured, AI-readable data' },
+];
 
 export default function Hero() {
   const recordingCount = useRecordingCount();
@@ -24,8 +31,18 @@ export default function Hero() {
 
   return (
     <>
-      <header className="flex-grow flex items-center justify-center text-center px-4 pt-12 pb-12 md:px-6">
-        <div className="mb-8 max-w-4xl flex flex-col gap-6">
+      <header className="relative flex-grow flex items-center justify-center text-center px-4 pt-16 pb-16 md:px-6 overflow-hidden">
+        <div aria-hidden className="hero-grid absolute inset-0 -z-10" />
+
+        <div className="mb-8 max-w-4xl flex flex-col items-center gap-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 backdrop-blur-sm px-4 py-1.5 text-xs sm:text-sm font-medium text-muted-foreground shadow-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+            </span>
+            Open source · DOM-level session recorder
+          </div>
+
           <div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-4 leading-tight drop-shadow-lg">
               Open<span className="text-primary">Scrim</span>
@@ -34,6 +51,24 @@ export default function Hero() {
 
           <div>
             <SloganText />
+            <p className="text-sm sm:text-base md:text-lg text-muted-foreground/80 max-w-2xl mx-auto px-2">
+              Record coding sessions as keystrokes, cursor moves, and edits —
+              then play them back like video, seek to any point, and fork the
+              exact moment into a live, editable session.
+            </p>
+          </div>
+
+          {/* Trust chips */}
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            {TRUST_CHIPS.map(({ icon: Icon, label }) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/40 px-3 py-1 text-xs sm:text-sm text-muted-foreground"
+              >
+                <Icon className="h-3.5 w-3.5 text-primary" />
+                {label}
+              </span>
+            ))}
           </div>
 
           {/* Action Buttons */}

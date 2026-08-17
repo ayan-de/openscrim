@@ -260,6 +260,29 @@
   }
 }
 
+/*
+ * Hero backdrop grid — faint graph-paper lines that fade out toward the
+ * edges via a radial mask, in the style of Linear/Vercel dev-tool heroes.
+ * Line color tracks `--border` so it stays subtle in both themes.
+ */
+@utility hero-grid {
+  background-image:
+    linear-gradient(to right, var(--border) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(
+    ellipse 75% 65% at 50% 20%,
+    black 30%,
+    transparent 85%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse 75% 65% at 50% 20%,
+    black 30%,
+    transparent 85%
+  );
+  opacity: 0.6;
+}
+
 .openscrim.openscrim {
   --os-accent: var(--primary);
   --os-bg: var(--background);
