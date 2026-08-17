@@ -2,6 +2,7 @@
 
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import LineBorder from '../components/ui/LineBorder';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -10,9 +11,11 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <Navbar mainText="OpenScrim" />
-      {children}
-      <Footer />
+      <LineBorder>
+        <Navbar mainText="OpenScrim" />
+        {children}
+        <Footer />
+      </LineBorder>
     </div>
   );
 }
