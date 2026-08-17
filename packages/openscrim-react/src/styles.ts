@@ -144,6 +144,28 @@ export const OPENSCRIM_CSS = `
   box-shadow: inset 0 -2px 0 0 var(--os-accent);
 }
 .os-tab:hover { color: var(--os-text); }
+.os-tab-label { overflow: hidden; text-overflow: ellipsis; }
+.os-tab-close {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  color: inherit;
+  opacity: 0;
+  cursor: pointer;
+}
+.os-tab:hover .os-tab-close,
+.os-tab[data-active='true'] .os-tab-close {
+  opacity: 0.7;
+}
+.os-tab-close:hover {
+  opacity: 1;
+  background: color-mix(in srgb, var(--os-muted) 30%, transparent);
+}
 
 /* Control bar */
 .os-controls {

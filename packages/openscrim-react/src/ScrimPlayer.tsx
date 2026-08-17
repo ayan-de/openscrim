@@ -42,6 +42,11 @@ const PauseIcon = () => (
     <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
   </svg>
 );
+const CloseIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </svg>
+);
 
 interface CursorPos {
   lineNumber: number;
@@ -377,6 +382,25 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     if (at !== undefined) seekTo(at);
   };
 
+  /**
+   * Closing a tab only hides it from the tab bar — it doesn't touch playback
+   * position or the stored file content, so if the recording revisits that
+   * file later, onFileChange's `seenFiles` re-add brings the tab right back.
+   */
+  const closeTab = (e: React.MouseEvent, path: string) => {
+    e.stopPropagation();
+    const remaining = seenFiles.filter((p) => p !== path);
+    setSeenFiles(remaining);
+    if (path !== activeFileRef.current) return;
+    const fallback = remaining[0] ?? null;
+    if (fallback) {
+      selectFile(fallback);
+    } else {
+      activeFileRef.current = null;
+      setActiveFile(null);
+    }
+  };
+
   const handleCreateFork = async () => {
     const editor = player.getEditor();
     if (!editor || !onCreateFork || forkMode) return;
@@ -543,7 +567,18 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
             <div className="os-tabs">
               {tabs.map((path) => (
                 <div key={path} className="os-tab" data-active={path === activeFile} onClick={() => selectFile(path)}>
-                  {path.split('/').pop()}
+                  <span className="os-tab-label">{path.split('/').pop()}</span>
+                  {forkMode && (
+                    <button
+                      type="button"
+                      className="os-tab-close"
+                      onClick={(e) => closeTab(e, path)}
+                      aria-label={`Close ${path.split('/').pop()}`}
+                      title="Close tab"
+                    >
+                      <CloseIcon />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
