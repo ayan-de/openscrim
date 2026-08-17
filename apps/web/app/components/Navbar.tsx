@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import BrandBackdrop, { BrandMark } from './BrandBackdrop';
 import { Button } from './ui/button';
 import { useAuth } from '../hooks/useAuth';
 import { useLoading } from '../context/LoadingContext';
@@ -24,12 +26,18 @@ export default function Navbar({ mainText }: NavbarProps) {
 
   return (
     <div className="w-full flex justify-center pt-3 md:pt-6 px-3 md:px-6">
-      <nav className="flex justify-between items-center backdrop-blur-md bg-card border border-border rounded-full px-3 md:px-6 py-2 md:py-3 max-w-2xl w-full">
-        <div className="flex items-center">
-          <h2 className="text-lg md:text-xl font-bold text-foreground">
-            {mainText}
-          </h2>
-        </div>
+      <nav className="flex justify-between items-center backdrop-blur-md bg-card/90 border border-border rounded-full px-3 md:px-6 py-2 md:py-2.5 max-w-2xl w-full shadow-sm overflow-hidden relative">
+        <Link
+          href="/"
+          className="relative flex items-center gap-2 px-3 py-1 rounded-full overflow-hidden group select-none"
+        >
+          <div
+            className="sidebar-stage-backdrop pointer-events-none absolute inset-x-0 top-0 z-0 h-full overflow-hidden opacity-80 group-hover:opacity-100 transition-opacity [--sidebar-stage-fade:var(--card)]"
+          >
+            <BrandBackdrop />
+          </div>
+          <BrandMark className="pointer-events-none" label={mainText} linked={false} />
+        </Link>
         <div className="flex gap-1 md:gap-2 items-center">
           {isLoading ? (
             <div className="w-8 h-8 animate-pulse bg-muted rounded-full"></div>

@@ -15,6 +15,7 @@ import { formatDuration } from '@/lib/formatDuration';
 import type { RecordingSession } from '@thisisayande/openscrim-core';
 
 import { getMaterialFileIcon } from 'file-extension-icon-js';
+import { BrandMark, SidebarBrandBackdrop } from '@/components/BrandBackdrop';
 import FileExplorer from '@/components/playground/FileExplorer';
 import FloatingPreviewWindow from '@/components/playground/FloatingPreviewWindow';
 import PlaygroundPlayer from '@/components/playground/PlaygroundPlayer';
@@ -290,54 +291,23 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground font-sans">
-      {/* Topbar */}
+      {/* Topbar — controls & breadcrumbs */}
       <div className="flex items-center justify-between flex-shrink-0 h-[38px] px-4 bg-background border-b border-border shadow-sm z-10">
-        <div className="flex items-center gap-2 text-[13px]">
-          <Link
-            href="/"
-            className="font-bold select-none mr-2 flex items-center"
-            title="OpenScrim"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="text-primary"
-            >
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" />
-              <path
-                d="M2 17L12 22L22 17"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M2 12L12 17L22 12"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </Link>
-          <span className="text-muted-foreground font-light">/</span>
+        <div className="flex items-center gap-2 text-[13px] min-w-0">
           <span className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors font-medium">
             Playground
           </span>
           {activeFile && (
             <>
               <span className="text-muted-foreground font-light">/</span>
-              <span className="font-semibold text-foreground tracking-wide">
+              <span className="font-semibold text-foreground tracking-wide truncate">
                 {activeFile.split('/').pop()}
               </span>
             </>
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           {isRecording && (
             <span className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
               <FaCircle className="text-destructive text-[8px] animate-pulse" />
@@ -505,8 +475,14 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
             isSidebarOpen ? 'w-64 border-r border-border' : 'w-0'
           }`}
         >
-          <div className="w-64 text-sidebar-foreground h-full overflow-y-auto overflow-x-clip bg-sidebar">
-            {sideMenuSelectedTab === 'explorer' && (
+          <div className="relative w-64 text-sidebar-foreground h-full overflow-hidden bg-sidebar">
+            <SidebarBrandBackdrop />
+            <div className="relative z-20 flex h-full min-h-0 flex-col">
+              <div className="flex items-center h-[38px] px-4 select-none shrink-0">
+                <BrandMark />
+              </div>
+              <div className="relative z-20 min-h-0 flex-1 overflow-y-auto overflow-x-clip">
+              {sideMenuSelectedTab === 'explorer' && (
               <FileExplorer
                 tree={tree}
                 openDirs={openDirs}
@@ -618,6 +594,8 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
                 </div>
               </div>
             )}
+              </div>
+            </div>
           </div>
         </div>
 

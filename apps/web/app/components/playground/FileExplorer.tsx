@@ -208,7 +208,7 @@ export default function FileExplorer({
   };
 
   return (
-    <div className="flex flex-col h-full select-none overflow-x-clip bg-sidebar text-sidebar-foreground">
+    <div className="relative z-20 flex flex-col h-full select-none overflow-x-clip text-sidebar-foreground">
       <div className="text-xs px-4 pb-2 pt-4 sticky flex items-center top-0 left-0">
         <div className="flex-grow font-semibold uppercase tracking-wider text-[11px] opacity-70">
           Files

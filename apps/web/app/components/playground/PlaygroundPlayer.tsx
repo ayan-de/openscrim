@@ -23,6 +23,7 @@ import {
   getForks,
   updateForkEdits,
 } from '@/lib/forkStorage';
+import { BrandMark, SidebarBrandBackdrop } from '@/components/BrandBackdrop';
 import { CODE_ROOT } from '@/components/playground/fileStore';
 import FloatingPreviewWindow from '@/components/playground/FloatingPreviewWindow';
 
@@ -143,17 +144,8 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground font-sans">
-      {/* Topbar — same chrome as the playground editor */}
       <div className="flex items-center justify-between flex-shrink-0 h-[38px] px-4 bg-background border-b border-border shadow-sm z-10">
-        <div className="flex items-center gap-2 text-[13px]">
-          <Link href="/" className="font-bold select-none mr-2 flex items-center" title="OpenScrim">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" />
-              <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
-          <span className="text-muted-foreground font-light">/</span>
+        <div className="flex items-center gap-2 text-[13px] min-w-0">
           <span className="text-muted-foreground font-medium">Playground</span>
           <span className="text-muted-foreground font-light">/</span>
           <span className="font-semibold text-foreground tracking-wide truncate max-w-64">
@@ -164,7 +156,7 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setIsPreviewOpen((v) => !v)}
             className={`flex items-center justify-center w-7 h-7 rounded hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
@@ -186,6 +178,16 @@ export default function PlaygroundPlayer({ sessionId }: PlaygroundPlayerProps) {
       </div>
 
       <div ref={playAreaRef} className="relative flex-grow min-h-0 overflow-hidden bg-background">
+        {Object.keys(files).length > 1 && (
+          <>
+            <div className="pointer-events-none absolute inset-y-0 left-0 z-0 w-64 overflow-hidden bg-sidebar">
+              <SidebarBrandBackdrop />
+            </div>
+            <div className="pointer-events-none absolute top-0 left-0 z-30 flex h-[38px] items-center px-4">
+              <BrandMark className="pointer-events-auto" />
+            </div>
+          </>
+        )}
         <ScrimPlayer
           session={session ?? undefined}
           height="100%"

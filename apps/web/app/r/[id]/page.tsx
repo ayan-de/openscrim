@@ -36,10 +36,10 @@ export default function RecordingPlayerPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-gray-900 flex items-center justify-center">
+      <div className="fixed inset-0 bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4" />
-          <p className="text-gray-400">Loading recording...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm">Loading recording...</p>
         </div>
       </div>
     );
@@ -47,19 +47,19 @@ export default function RecordingPlayerPage() {
 
   if (error) {
     return (
-      <div className="fixed inset-0 bg-gray-900 flex items-center justify-center">
+      <div className="fixed inset-0 bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-white mb-2">
+          <h2 className="text-xl font-semibold text-foreground mb-2">
             Failed to load recording
           </h2>
-          <p className="text-gray-400">{error}</p>
+          <p className="text-muted-foreground text-sm">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-900">
+    <div className="fixed inset-0 bg-background">
       <PlaybackViewer session={session} />
     </div>
   );

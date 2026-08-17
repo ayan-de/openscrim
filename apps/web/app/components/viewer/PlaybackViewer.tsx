@@ -20,7 +20,7 @@ import {
   updateForkEdits,
   deleteFork as deleteForkFromStorage,
 } from '@/lib/forkStorage';
-import { formatDuration } from '@/lib/formatDuration';
+import { BrandMark, SidebarBrandBackdrop } from '@/components/BrandBackdrop';
 
 interface PlaybackViewerProps {
   session: RecordingSession | null;
@@ -346,65 +346,60 @@ export default function PlaybackViewer({
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-900 text-white">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-700">
-        <div>
-          <h2 className="text-lg font-semibold">{session.title}</h2>
-          <p className="text-sm text-gray-400">
-            {formatDuration(session.duration, 'verbose')} •{' '}
-            {session.events.length} events • {session.language}
-          </p>
-        </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm transition-colors"
-          >
-            Close
-          </button>
-        )}
-      </div>
-
-      {/* Playback Controls */}
-      <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center gap-4 mb-4">
-          {/* Play/Pause/Stop controls */}
-          <div className="flex items-center gap-2">
-            {playbackState === PlaybackState.PLAYING ? (
-              <button
-                onClick={handlePause}
-                className="w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-colors"
-                disabled={!isReady || mode === 'fork'}
-              >
-                <span className="text-lg">⏸️</span>
-              </button>
-            ) : (
-              <button
-                onClick={handlePlay}
-                className="w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center transition-colors"
-                disabled={!isReady || mode === 'fork'}
-              >
-                <span className="text-lg">▶️</span>
-              </button>
-            )}
-
-            <button
-              onClick={handleStop}
-              className="w-10 h-10 bg-gray-600 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors"
-              disabled={!isReady || mode === 'fork'}
-            >
-              <span className="text-lg">⏹️</span>
-            </button>
+    <div className="w-full h-full flex flex-col bg-background text-foreground font-sans">
+      <div className="flex items-center justify-between flex-shrink-0 h-[38px] px-4 bg-background border-b border-border shadow-sm z-10">
+        <div className="relative flex items-center justify-between flex-grow min-w-0">
+          <div className="flex items-center gap-2 text-[13px] min-w-0">
+            <span className="text-muted-foreground font-medium">Player</span>
+            <span className="text-muted-foreground font-light">/</span>
+            <span className="font-semibold text-foreground tracking-wide truncate max-w-64">
+              {session.title}
+            </span>
+            <span className="ml-2 px-2 py-0.5 rounded bg-accent text-accent-foreground text-[10px] font-bold uppercase tracking-widest">
+              {playbackState.toUpperCase()}
+            </span>
           </div>
 
-          {/* Speed control */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-400">Speed:</label>
+          <div className="flex items-center gap-3">
+            {/* Play/Pause/Stop */}
+            <div className="flex items-center gap-1">
+              {playbackState === PlaybackState.PLAYING ? (
+                <button
+                  onClick={handlePause}
+                  className="px-2.5 py-1 bg-primary text-primary-foreground hover:bg-primary/90 rounded text-xs font-semibold transition-colors cursor-pointer"
+                  disabled={!isReady || mode === 'fork'}
+                >
+                  Pause
+                </button>
+              ) : (
+                <button
+                  onClick={handlePlay}
+                  className="px-2.5 py-1 bg-primary text-primary-foreground hover:bg-primary/90 rounded text-xs font-semibold transition-colors cursor-pointer"
+                  disabled={!isReady || mode === 'fork'}
+                >
+                  Play
+                </button>
+              )}
+
+              <button
+                onClick={handleStop}
+                className="px-2.5 py-1 bg-muted hover:bg-accent text-muted-foreground hover:text-accent-foreground rounded text-xs transition-colors cursor-pointer"
+                disabled={!isReady || mode === 'fork'}
+              >
+                Stop
+              </button>
+            </div>
+
+            {/* Time display */}
+            <span className="font-mono text-xs text-muted-foreground">
+              {formatTime(position.currentTime)} / {formatTime(position.totalTime)}
+            </span>
+
+            {/* Speed control */}
             <select
               value={speed}
               onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
-              className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm"
+              className="bg-card border border-border rounded px-2 py-0.5 text-xs text-foreground font-mono"
               disabled={!isReady || mode === 'fork'}
             >
               {speedOptions.map((option) => (
@@ -413,73 +408,47 @@ export default function PlaybackViewer({
                 </option>
               ))}
             </select>
-          </div>
 
-          {/* Time display */}
-          <div className="text-sm text-gray-400">
-            {formatTime(position.currentTime)} /{' '}
-            {formatTime(position.totalTime)}
-          </div>
+            {/* Fork button & list */}
+            <div className="relative flex items-center gap-1.5" ref={forkListRef}>
+              <button
+                onClick={handleCreateFork}
+                disabled={!isReady || mode === 'fork'}
+                className="flex items-center gap-1 px-2.5 py-1 bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 rounded text-xs font-medium transition-colors cursor-pointer"
+                title="Pause and edit code at this point"
+              >
+                <GitBranch size={12} />
+                <span>Fork</span>
+              </button>
 
-          {/* State indicator */}
-          <div className="text-sm">
-            <span
-              className={`px-2 py-1 rounded text-xs font-medium ${
-                playbackState === PlaybackState.PLAYING
-                  ? 'bg-green-600 text-white'
-                  : playbackState === PlaybackState.PAUSED
-                    ? 'bg-yellow-600 text-white'
-                    : 'bg-gray-600 text-gray-300'
-              }`}
-            >
-              {playbackState.toUpperCase()}
-            </span>
-          </div>
-
-          {/* Fork button */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleCreateFork}
-              disabled={!isReady || mode === 'fork'}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded text-sm transition-colors"
-              title="Pause and edit code at this point"
-            >
-              <GitBranch size={14} />
-              <span>Fork</span>
-            </button>
-            {forks.length > 0 && (
-              <span className="text-xs text-gray-400">
-                {forks.length} fork{forks.length !== 1 ? 's' : ''}
-              </span>
-            )}
-            <div className="relative" ref={forkListRef}>
               {forks.length > 0 && (
                 <button
                   onClick={() => setShowForkList(!showForkList)}
                   disabled={mode === 'fork'}
-                  className="text-xs text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+                  className="px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground bg-muted hover:bg-accent rounded transition-colors disabled:opacity-50 cursor-pointer font-mono"
                 >
-                  {showForkList ? 'Hide' : 'List'}
+                  {forks.length} fork{forks.length !== 1 ? 's' : ''}
                 </button>
               )}
+
               {showForkList && (
-                <div className="absolute top-full mt-2 right-0 w-72 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+                <div className="absolute top-full mt-2 right-0 w-72 bg-card border border-border rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto p-1">
                   {forks.length === 0 ? (
-                    <div className="p-4 text-sm text-gray-400 text-center">
+                    <div className="p-3 text-xs text-muted-foreground text-center">
                       No forks yet — click Fork to start editing
                     </div>
                   ) : (
                     forks.map((fork, idx) => (
                       <div
                         key={fork.id}
-                        className="flex items-center justify-between px-3 py-2 hover:bg-gray-700 border-b border-gray-700 last:border-b-0"
+                        className="flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded border-b border-border/50 last:border-b-0"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                          <span className="text-sm text-white truncate">
+                          <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                          <span className="text-xs font-medium text-foreground truncate">
                             Fork #{idx + 1}
                           </span>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-[10px] font-mono text-muted-foreground">
                             {formatTime(fork.timestamp)}
                           </span>
                         </div>
@@ -490,13 +459,13 @@ export default function PlaybackViewer({
                               setShowForkList(false);
                             }}
                             disabled={mode === 'fork'}
-                            className="px-2 py-0.5 text-xs bg-blue-600 hover:bg-blue-700 rounded disabled:opacity-50"
+                            className="px-2 py-0.5 text-[10px] bg-primary text-primary-foreground hover:bg-primary/90 rounded disabled:opacity-50 font-medium"
                           >
                             Open
                           </button>
                           <button
                             onClick={() => handleDeleteFork(fork.id)}
-                            className="px-2 py-0.5 text-xs bg-red-600 hover:bg-red-700 rounded"
+                            className="px-2 py-0.5 text-[10px] bg-destructive/20 hover:bg-destructive/40 text-destructive rounded font-medium"
                           >
                             Delete
                           </button>
@@ -507,41 +476,50 @@ export default function PlaybackViewer({
                 </div>
               )}
             </div>
+
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="px-2.5 py-1 bg-muted hover:bg-accent text-xs rounded transition-colors"
+              >
+                Close
+              </button>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Timeline scrubber with fork markers */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 relative">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="0.1"
-              value={position.progress * 100}
-              onChange={handleTimelineChange}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer timeline-slider"
-              disabled={!isReady || mode === 'fork'}
-            />
-            {position.totalTime > 0 &&
-              forks.map((fork) => {
-                const leftPercent = (fork.timestamp / position.totalTime) * 100;
-                return (
-                  <button
-                    key={fork.id}
-                    onClick={() => handleOpenFork(fork)}
-                    disabled={mode === 'fork'}
-                    className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full border border-gray-900 transition-transform hover:scale-150 ${
-                      mode === 'fork'
-                        ? 'bg-gray-500 cursor-not-allowed opacity-50'
-                        : 'bg-red-500 hover:bg-red-400 cursor-pointer'
-                    }`}
-                    style={{ left: `${leftPercent}%` }}
-                    title={`Fork at ${formatTime(fork.timestamp)}`}
-                  />
-                );
-              })}
-          </div>
+      {/* Playback Scrubber Strip */}
+      <div className="px-4 py-1.5 bg-card border-b border-border flex items-center gap-3">
+        <div className="flex-1 relative flex items-center">
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="0.1"
+            value={position.progress * 100}
+            onChange={handleTimelineChange}
+            className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer timeline-slider"
+            disabled={!isReady || mode === 'fork'}
+          />
+          {position.totalTime > 0 &&
+            forks.map((fork) => {
+              const leftPercent = (fork.timestamp / position.totalTime) * 100;
+              return (
+                <button
+                  key={fork.id}
+                  onClick={() => handleOpenFork(fork)}
+                  disabled={mode === 'fork'}
+                  className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full border border-background transition-transform hover:scale-150 ${
+                    mode === 'fork'
+                      ? 'bg-muted-foreground cursor-not-allowed opacity-50'
+                      : 'bg-primary hover:bg-primary/80 cursor-pointer'
+                  }`}
+                  style={{ left: `${leftPercent}%` }}
+                  title={`Fork at ${formatTime(fork.timestamp)}`}
+                />
+              );
+            })}
         </div>
       </div>
 
@@ -566,49 +544,55 @@ export default function PlaybackViewer({
         </div>
       )}
 
-      {/* Editor */}
-      <div className="flex-1 relative">
-        {isReady ? (
-          <div
-            className={
-              mode === 'fork' ? 'h-full border-l-2 border-green-500' : 'h-full'
-            }
-          >
-            <Editor
-              height="100%"
-              language={session.language}
-              value={editorContent}
-              onMount={handleEditorMount}
-              theme="vs-dark"
-              options={{
-                readOnly: mode !== 'fork',
-                minimap: { enabled: true },
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                fontSize: 14,
-                lineNumbers: 'on',
-                cursorStyle: 'line',
-                selectionHighlight: true,
-                occurrencesHighlight: 'singleFile',
-              }}
-            />
+      <div className="flex flex-1 min-h-0">
+        <div className="relative w-64 flex-shrink-0 overflow-hidden bg-sidebar border-r border-border">
+          <SidebarBrandBackdrop />
+          <div className="relative z-10 flex items-center h-[38px] px-4 select-none">
+            <BrandMark />
           </div>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
-              <p className="text-gray-400">Loading recording...</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Session Info (optional footer) */}
-      {session.description && (
-        <div className="p-4 border-t border-gray-700 bg-gray-800">
-          <p className="text-sm text-gray-300">{session.description}</p>
+          {session.description ? (
+            <p className="relative z-10 px-4 pt-2 text-xs text-sidebar-foreground/80 leading-relaxed">
+              {session.description}
+            </p>
+          ) : null}
         </div>
-      )}
+
+        <div className="flex-1 relative min-w-0">
+          {isReady ? (
+            <div
+              className={
+                mode === 'fork' ? 'h-full border-l-2 border-green-500' : 'h-full'
+              }
+            >
+              <Editor
+                height="100%"
+                language={session.language}
+                value={editorContent}
+                onMount={handleEditorMount}
+                theme="vs-dark"
+                options={{
+                  readOnly: mode !== 'fork',
+                  minimap: { enabled: true },
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  fontSize: 14,
+                  lineNumbers: 'on',
+                  cursorStyle: 'line',
+                  selectionHighlight: true,
+                  occurrencesHighlight: 'singleFile',
+                }}
+              />
+            </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-muted-foreground text-sm">Loading recording...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* eslint-disable-next-line react/no-unknown-property */}
       <style jsx>{`

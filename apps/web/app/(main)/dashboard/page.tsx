@@ -10,6 +10,7 @@ import {
   updateRecording,
   type RecordingFromApi,
 } from '@/lib/recordingsApi';
+import BrandBackdrop from '@/components/BrandBackdrop';
 import { formatDuration } from '@/lib/formatDuration';
 
 export default function DashboardPage() {
@@ -104,19 +105,26 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-grow px-4 md:px-6 py-8 max-w-6xl mx-auto w-full">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            {total} recording{total !== 1 ? 's' : ''}
-          </p>
+      <div className="relative rounded-2xl border border-border bg-card p-6 md:p-8 mb-8 overflow-hidden shadow-sm">
+        <div className="sidebar-stage-backdrop pointer-events-none absolute inset-x-0 top-0 z-0 h-28 overflow-hidden [--sidebar-stage-fade:var(--card)]">
+          <BrandBackdrop />
         </div>
-        <Link
-          href="/upload"
-          className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-        >
-          Upload .scrim
-        </Link>
+        <div className="relative z-10 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+              Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {total} recording{total !== 1 ? 's' : ''} saved in your cloud library
+            </p>
+          </div>
+          <Link
+            href="/upload"
+            className="bg-primary text-primary-foreground px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
+          >
+            Upload .scrim
+          </Link>
+        </div>
       </div>
 
       {loading ? (
