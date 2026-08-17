@@ -15,7 +15,7 @@ npm install @thisisayande/openscrim-core
 - **`RecordingManager`** — captures editor events into a `RecordingSession` buffer
 - **`PlaybackEngine`** — schedules and replays events with play/pause/seek/speed; emits events to your renderer via handler callbacks
 - **`compressEvents` / `decompressEvents`** — event-stream compression (cursor dedup, keystroke batching)
-- **`sessionToTantricaFile` / `writeTantricaBuffer` / `readTantricaBuffer`** — the `.tantrica` file format: gzipped JSON with magic bytes and a fast-readable metadata header
+- **`sessionToScrimFile` / `writeScrimBuffer` / `readScrimBuffer`** — the `.scrim` file format: gzipped JSON with magic bytes and a fast-readable metadata header
 - **`types`** — the full `RecordingEvent` union and `RecordingSession` model
 
 ## Quick example
@@ -37,8 +37,8 @@ engine.setSpeed(1.5);
 ## Environment notes
 
 - Recording, playback, and event compression work in **browsers and Node**.
-- **Reading** `.tantrica` files works everywhere: `parseTantricaBytes(bytes)` is async and uses Web APIs only (`DecompressionStream`), so it runs in browsers and Node 18+.
-- The synchronous binary helpers (`writeTantricaBuffer` / `readTantricaBuffer`) require **Node** (they use `zlib` and `Buffer`); use them server-side. Plain-JSON serialization works everywhere.
+- **Reading** `.scrim` files works everywhere: `parseScrimBytes(bytes)` is async and uses Web APIs only (`DecompressionStream`), so it runs in browsers and Node 18+.
+- The synchronous binary helpers (`writeScrimBuffer` / `readScrimBuffer`) require **Node** (they use `zlib` and `Buffer`); use them server-side. Plain-JSON serialization works everywhere.
 
 ## Status
 
