@@ -14,22 +14,22 @@ const loader: MonacoLoader =
 import {
   PlaybackEngine,
   PlaybackState,
-  parseTantricaBytes,
-  tantricaFileToSession,
+  parseScrimBytes,
+  scrimFileToSession,
   type MousePointerEvent,
   type PlaybackPosition,
   type RecordingSession,
-  type TantricaFile,
+  type ScrimFile,
 } from '@thisisayande/openscrim-core';
 import { attachPlayback } from '@thisisayande/openscrim-monaco';
 import { injectStyles } from './styles.js';
 
 export interface PlayerOptions {
-  /** URL of a `.tantrica` (or plain-JSON) recording to fetch. */
+  /** URL of a `.scrim` (or plain-JSON) recording to fetch. */
   src?: string;
   /** Alternatively, a session or parsed file you already have in memory. */
   session?: RecordingSession;
-  file?: TantricaFile;
+  file?: ScrimFile;
   autoplay?: boolean;
   /** Initial playback speed (0.25–4). */
   speed?: number;
@@ -65,14 +65,14 @@ function formatTime(ms: number): string {
 
 async function resolveSession(options: PlayerOptions): Promise<RecordingSession> {
   if (options.session) return options.session;
-  if (options.file) return tantricaFileToSession(options.file);
+  if (options.file) return scrimFileToSession(options.file);
   if (options.src) {
     const response = await fetch(options.src);
     if (!response.ok) {
       throw new Error(`Failed to fetch recording: HTTP ${response.status}`);
     }
     const bytes = new Uint8Array(await response.arrayBuffer());
-    return tantricaFileToSession(await parseTantricaBytes(bytes));
+    return scrimFileToSession(await parseScrimBytes(bytes));
   }
   throw new Error('createPlayer needs one of: src, session, or file');
 }

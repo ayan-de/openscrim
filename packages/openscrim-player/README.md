@@ -7,7 +7,7 @@ Monaco is lazy-loaded from a CDN at runtime, so you don't need a bundler, a Mona
 ## Script tag (no build tools)
 
 ```html
-<div data-openscrim-src="/recordings/intro.tantrica" data-height="420px"></div>
+<div data-openscrim-src="/recordings/intro.scrim" data-height="420px"></div>
 <script src="https://cdn.jsdelivr.net/npm/@thisisayande/openscrim-player/dist/embed.global.js"></script>
 ```
 
@@ -23,7 +23,7 @@ npm install @thisisayande/openscrim-player
 import { createPlayer } from '@thisisayande/openscrim-player';
 
 const player = await createPlayer(document.getElementById('demo')!, {
-  src: '/recordings/intro.tantrica', // or pass `session` / `file` directly
+  src: '/recordings/intro.scrim', // or pass `session` / `file` directly
   theme: 'dark',
   autoplay: false,
 });
@@ -37,9 +37,9 @@ If your page already ships `monaco-editor`, pass it via `options.monaco` to skip
 
 ## Recording format
 
-The player accepts binary `.tantrica` files and their plain-JSON equivalent, served from any static host. Recordings are produced with [`@thisisayande/openscrim-monaco`](https://www.npmjs.com/package/@thisisayande/openscrim-monaco) or the [OpenScrim studio](https://github.com/ayan-de/openscrim).
+The player accepts binary `.scrim` files and their plain-JSON equivalent, served from any static host. Recordings are produced with [`@thisisayande/openscrim-monaco`](https://www.npmjs.com/package/@thisisayande/openscrim-monaco) or the [OpenScrim studio](https://github.com/ayan-de/openscrim).
 
-Note: serve `.tantrica` files with any content type — the player sniffs magic bytes, not MIME.
+Note: serve `.scrim` files with any content type — the player sniffs magic bytes, not MIME.
 
 ## Status
 

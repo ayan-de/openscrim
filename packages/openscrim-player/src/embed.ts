@@ -9,7 +9,7 @@ export type { Player, PlayerOptions } from './player.js';
  * player. Optional attributes: data-autoplay, data-speed, data-theme,
  * data-height.
  *
- *   <div data-openscrim-src="/recordings/intro.tantrica" data-height="400px"></div>
+ *   <div data-openscrim-src="/recordings/intro.scrim" data-height="400px"></div>
  *   <script src="https://cdn.jsdelivr.net/npm/@thisisayande/openscrim-player/dist/embed.global.js"></script>
  */
 function initAll(): void {
