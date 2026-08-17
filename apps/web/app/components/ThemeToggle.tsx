@@ -52,7 +52,7 @@ export function ThemeToggle() {
           : 'Toggle theme'
       }
       aria-pressed={mounted ? theme === 'dark' : undefined}
-      className="fixed bottom-4 right-4 z-50 h-10 w-10 rounded-full shadow-md backdrop-blur-sm bg-background/80 border-border"
+      className="fixed bottom-4 right-4 z-5000 h-10 w-10 rounded-full shadow-md backdrop-blur-sm bg-background/80 border-border"
     >
       {mounted && theme === 'dark' ? (
         <Sun className="h-5 w-5" />
