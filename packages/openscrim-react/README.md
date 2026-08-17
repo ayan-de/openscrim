@@ -2,7 +2,7 @@
 
 React SDK for [OpenScrim](https://github.com/ayan-de/openscrim) — record and replay interactive, forkable code screencasts with a Monaco editor. Ships drop-in `<ScrimRecorder>` / `<ScrimPlayer>` components **and** the headless `useRecorder` / `usePlayer` hooks underneath them.
 
-The SDK is deliberately unopinionated: it owns the editor, the recording engine, and the playback engine — **you** own storage, auth, and networking. A finished recording is handed back through `onComplete`; where it goes (IndexedDB, your API, the OpenScrim cloud, a `.tantrica` download) is your call.
+The SDK is deliberately unopinionated: it owns the editor, the recording engine, and the playback engine — **you** own storage, auth, and networking. A finished recording is handed back through `onComplete`; where it goes (IndexedDB, your API, the OpenScrim cloud, a `.scrim` download) is your call.
 
 ## Install
 
@@ -34,8 +34,8 @@ import { ScrimRecorder } from '@thisisayande/openscrim-react';
 ```tsx
 import { ScrimPlayer } from '@thisisayande/openscrim-react';
 
-// from a URL, a parsed .tantrica file, or an in-memory session
-<ScrimPlayer src="/recordings/intro.tantrica" autoplay speed={1.5} />;
+// from a URL, a parsed .scrim file, or an in-memory session
+<ScrimPlayer src="/recordings/intro.scrim" autoplay speed={1.5} />;
 ```
 
 Pause and the viewer can edit the instructor's exact code; press play and the canonical stream resumes.

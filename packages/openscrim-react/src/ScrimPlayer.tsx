@@ -9,8 +9,8 @@ import {
 import { Editor } from '@monaco-editor/react';
 import type * as monacoType from 'monaco-editor';
 import {
-  parseTantricaBytes,
-  tantricaFileToSession,
+  parseScrimBytes,
+  scrimFileToSession,
   PlaybackState,
   RecordingEventType,
 } from '@thisisayande/openscrim-core';
@@ -18,7 +18,7 @@ import type {
   FileChangeEvent,
   MousePointerEvent,
   RecordingSession,
-  TantricaFile,
+  ScrimFile,
 } from '@thisisayande/openscrim-core';
 import { usePlayer, type UsePlayerResult } from './usePlayer.js';
 import { buildFileTree, languageForPath } from './file-tree.js';
@@ -91,7 +91,7 @@ export interface PlayerFiles {
 export interface ScrimPlayerProps {
   /** Provide exactly one source: an in-memory session, a parsed file, or a URL. */
   session?: RecordingSession;
-  file?: TantricaFile;
+  file?: ScrimFile;
   src?: string;
   autoplay?: boolean;
   speed?: number;
@@ -141,13 +141,13 @@ function useResolvedSession(
 ): { session: RecordingSession | null; error: Error | null } {
   const { session: inline, file, src, onError } = props;
   const [session, setSession] = useState<RecordingSession | null>(
-    inline ?? (file ? tantricaFileToSession(file) : null)
+    inline ?? (file ? scrimFileToSession(file) : null)
   );
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (inline) return setSession(inline);
-    if (file) return setSession(tantricaFileToSession(file));
+    if (file) return setSession(scrimFileToSession(file));
     if (!src) return;
 
     let cancelled = false;
@@ -156,8 +156,8 @@ function useResolvedSession(
     fetch(src)
       .then(async (res) => {
         if (!res.ok) throw new Error(`Failed to fetch recording: HTTP ${res.status}`);
-        return tantricaFileToSession(
-          await parseTantricaBytes(new Uint8Array(await res.arrayBuffer()))
+        return scrimFileToSession(
+          await parseScrimBytes(new Uint8Array(await res.arrayBuffer()))
         );
       })
       .then((resolved) => !cancelled && setSession(resolved))

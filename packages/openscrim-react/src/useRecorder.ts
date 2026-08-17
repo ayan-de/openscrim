@@ -19,7 +19,7 @@ export interface UseRecorderOptions {
   /**
    * Called with the finished session when recording stops. This is the only
    * hand-off point — the SDK never persists anything itself. Save it to
-   * IndexedDB, your API, the OpenScrim cloud, or a `.tantrica` download here.
+   * IndexedDB, your API, the OpenScrim cloud, or a `.scrim` download here.
    */
   onComplete?: (session: RecordingSession) => void;
   onError?: (error: Error) => void;

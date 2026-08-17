@@ -37,6 +37,6 @@ export type {
   MousePointerEvent,
   FileChangeEvent,
   PlaybackPosition,
-  TantricaFile,
+  ScrimFile,
 } from '@thisisayande/openscrim-core';
 export { PlaybackState, RecordingState } from '@thisisayande/openscrim-core';
