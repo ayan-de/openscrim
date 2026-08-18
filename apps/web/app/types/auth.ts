@@ -4,7 +4,7 @@ export interface User {
   firstName: string;
   lastName: string;
   picture?: string;
-  provider: 'google';
+  provider: string;
   providerId: string;
 }
 
@@ -15,14 +15,5 @@ export interface AuthResponse {
   data: {
     user: User;
     accessToken: string;
-  };
-}
-
-export interface GoogleAuthUrl {
-  status: number;
-  code: string;
-  message: string;
-  data: {
-    authUrl: string;
   };
 }

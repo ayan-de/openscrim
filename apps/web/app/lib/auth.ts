@@ -1,20 +1,20 @@
 /* eslint-disable turbo/no-undeclared-env-vars */
 import NextAuth from 'next-auth';
-import Google from 'next-auth/providers/google';
+import GitHub from 'next-auth/providers/github';
 import { connectToDatabase } from './mongodb';
 import UserModel from './models/User';
 
 const nextAuthResult = NextAuth({
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
     }),
   ],
   secret: process.env.AUTH_SECRET,
   callbacks: {
     async signIn({ account, profile }) {
-      if (account?.provider === 'google' && profile?.sub) {
+      if (account?.provider && profile?.sub) {
         await connectToDatabase();
         const providerId = profile.sub;
         const existingUser = await UserModel.findOne({ providerId });
@@ -24,7 +24,7 @@ const nextAuthResult = NextAuth({
             firstName: profile.given_name ?? '',
             lastName: profile.family_name ?? '',
             picture: profile.picture,
-            provider: 'google',
+            provider: account.provider,
             providerId,
           });
         }
@@ -32,7 +32,7 @@ const nextAuthResult = NextAuth({
       return true;
     },
     async jwt({ token, account, profile }) {
-      if (account?.provider === 'google' && profile?.sub) {
+      if (account?.provider && profile?.sub) {
         await connectToDatabase();
         const user = await UserModel.findOne({ providerId: profile.sub });
         if (user) {

@@ -9,7 +9,7 @@ interface AuthResult {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  initiateGoogleLogin: () => Promise<void>;
+  login: (provider: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -17,7 +17,7 @@ const localOnlyAuth: AuthResult = {
   user: null,
   isLoading: false,
   isAuthenticated: false,
-  initiateGoogleLogin: async () => {
+  login: async () => {
     console.warn('Auth is disabled (NEXT_PUBLIC_LOCAL_ONLY=true)');
   },
   logout: async () => {},
@@ -39,13 +39,13 @@ function useSessionAuth(): AuthResult {
         firstName: session.user.firstName,
         lastName: session.user.lastName,
         picture: session.user.picture,
-        provider: session.user.provider as 'google',
+        provider: session.user.provider,
         providerId: session.user.providerId,
       }
     : null;
 
-  const initiateGoogleLogin = useCallback(async () => {
-    await signIn('google', { callbackUrl: '/auth/callback' });
+  const login = useCallback(async (provider: string) => {
+    await signIn(provider, { callbackUrl: '/auth/callback' });
   }, []);
 
   const logout = useCallback(async () => {
@@ -56,7 +56,7 @@ function useSessionAuth(): AuthResult {
     user,
     isLoading,
     isAuthenticated,
-    initiateGoogleLogin,
+    login,
     logout,
   };
 }
