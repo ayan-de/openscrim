@@ -44,18 +44,13 @@ export default function Hero() {
           </div>
 
           <div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold mb-4 leading-tight drop-shadow-lg">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-4 leading-[1.1] tracking-tight text-foreground">
               Open<span className="text-primary">Scrim</span>
             </h1>
           </div>
 
           <div>
             <SloganText />
-            <p className="text-sm sm:text-base md:text-lg text-muted-foreground/80 max-w-2xl mx-auto px-2">
-              Record coding sessions as keystrokes, cursor moves, and edits —
-              then play them back like video, seek to any point, and fork the
-              exact moment into a live, editable session.
-            </p>
           </div>
 
           {/* Trust chips */}
@@ -80,7 +75,7 @@ export default function Hero() {
             >
               Start Recording
             </Button>
-
+            {/* 
             <Link href="/editor" className="w-full sm:w-auto">
               <Button
                 variant="outline"
@@ -89,7 +84,7 @@ export default function Hero() {
               >
                 Open Editor
               </Button>
-            </Link>
+            </Link> */}
 
             <Link href="/view" className="w-full sm:w-auto">
               <Button

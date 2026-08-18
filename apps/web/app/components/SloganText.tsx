@@ -105,7 +105,7 @@ export default function SloganText() {
         </p>
       </div> */}
 
-      <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-medium text-muted-foreground drop-shadow-md px-2">
+      <p className="text-lg sm:text-xl md:text-2xl font-serif italic font-normal tracking-tight text-foreground/90 px-2">
         &quot;Stop recording pixels, instead capture DOM&quot;
       </p>
     </div>
