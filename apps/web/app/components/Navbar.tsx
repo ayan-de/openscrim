@@ -12,15 +12,15 @@ export interface NavbarProps {
 }
 
 export default function Navbar({ mainText }: NavbarProps) {
-  const { user, isLoading, isAuthenticated, login } = useAuth();
+  const { user, isLoading, isAuthenticated, initiateGitHubLogin } = useAuth();
   const { showLoading, showError } = useLoading();
 
   const handleSignUp = async () => {
     try {
-      showLoading('Redirecting to sign in...');
-      await login('github');
+      showLoading('Redirecting to GitHub...');
+      await initiateGitHubLogin();
     } catch {
-      showError('Failed to initiate sign in');
+      showError('Failed to initiate GitHub login');
     }
   };
 
