@@ -42,7 +42,9 @@ export function resolveTheme(theme?: ThemeInput): ResolvedTheme {
   }
   const base = theme.base ?? 'dark';
   const vars: Record<string, string> = {};
-  for (const key of Object.keys(TOKEN_TO_VAR) as Array<keyof typeof TOKEN_TO_VAR>) {
+  for (const key of Object.keys(TOKEN_TO_VAR) as Array<
+    keyof typeof TOKEN_TO_VAR
+  >) {
     const value = theme[key];
     if (value) vars[TOKEN_TO_VAR[key]] = value;
   }
@@ -98,7 +100,7 @@ export const OPENSCRIM_CSS = `
   text-transform: uppercase;
   color: var(--os-muted);
 }
-.os-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.os-main { display: flex; flex-direction: column; flex: 1; min-width: 0; position: relative; }
 .os-editor { flex: 1; min-height: 0; position: relative; }
 
 /* File tree */
@@ -167,15 +169,48 @@ export const OPENSCRIM_CSS = `
   background: color-mix(in srgb, var(--os-muted) 30%, transparent);
 }
 
-/* Control bar */
+/* Play/pause — its own isolated floating circle, bottom-left of the player. */
+.os-play-float {
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--os-accent);
+  color: var(--os-accent-contrast);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: background 120ms ease, transform 120ms ease;
+}
+.os-play-float:hover { background: color-mix(in srgb, var(--os-accent) 88%, #000); }
+.os-play-float:active { transform: scale(0.94); }
+
+/* Control bar — floats over the editor as a pill, not a docked footer. */
 .os-controls {
+  position: absolute;
+  left: 68px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 9px 12px;
-  background: var(--os-bg);
-  border-top: 1px solid var(--os-border);
+  gap: 10px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--os-bg) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--os-border) 80%, transparent);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28), 0 1px 2px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
   user-select: none;
+  transition: opacity 160ms ease, transform 160ms ease;
 }
 .os-btn {
   all: unset;
@@ -198,7 +233,6 @@ export const OPENSCRIM_CSS = `
 .os-btn:active { transform: scale(0.94); }
 .os-btn-primary { background: var(--os-accent); color: var(--os-accent-contrast); }
 .os-btn-primary:hover { background: color-mix(in srgb, var(--os-accent) 88%, #000); }
-.os-btn-round { width: 34px; height: 34px; min-width: 34px; padding: 0; border-radius: 6px; }
 .os-btn[disabled] { opacity: 0.4; cursor: default; transform: none; }
 .os-time {
   font-variant-numeric: tabular-nums;
@@ -254,14 +288,29 @@ export const OPENSCRIM_CSS = `
   background: transparent;
   color: var(--os-text);
   border: 1px solid var(--os-border);
-  border-radius: 6px;
+  border-radius: 999px;
   padding: 3px 6px;
   font-size: 12px;
   cursor: pointer;
 }
 .os-select:hover { border-color: var(--os-muted); }
 .os-select option { color: #000; }
-.os-hint { color: var(--os-muted); font-size: 12px; }
+.os-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 58px;
+  transform: translateX(-50%);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--os-bg) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--os-border) 80%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--os-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 1000;
+}
 
 /* Pointer overlay */
 .os-pointer {

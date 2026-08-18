@@ -611,24 +611,25 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
         )}
       </div>
 
-      {/* Pointer overlays the full player root — recordings normalize the cursor
-          to the whole IDE area (full height, matching a floating control bar),
-          not the body minus the docked controls. */}
+      {/* Pointer/controls overlay the whole player, full width — z-indexed above the sidebar. */}
       {pointer && dot && !forkMode && (
         <div aria-hidden className="os-pointer" style={{ left: `${dot.x * 100}%`, top: `${dot.y * 100}%` }} />
       )}
 
       {controls && !children && (
+        <button
+          type="button"
+          className="os-play-float"
+          onClick={handleTogglePlay}
+          aria-label={forkMode ? 'Return to playback' : isPlaying ? 'Pause' : 'Play'}
+          title={forkMode ? 'Return to playback' : undefined}
+        >
+          {isPlaying && !forkMode ? <PauseIcon /> : <PlayIcon />}
+        </button>
+      )}
+
+      {controls && !children && (
         <div className="os-controls">
-          <button
-            type="button"
-            className="os-btn os-btn-primary os-btn-round"
-            onClick={handleTogglePlay}
-            aria-label={forkMode ? 'Return to playback' : isPlaying ? 'Pause' : 'Play'}
-            title={forkMode ? 'Return to playback' : undefined}
-          >
-            {isPlaying && !forkMode ? <PauseIcon /> : <PlayIcon />}
-          </button>
           <span className="os-time">
             {formatTime(position.currentTime)} / {formatTime(position.totalTime)}
           </span>
