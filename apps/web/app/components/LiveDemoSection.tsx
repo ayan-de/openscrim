@@ -99,7 +99,7 @@ export default function LiveDemoSection() {
 
   return (
     <section
-      className="py-16"
+      className="py-0"
       style={{
         paddingLeft: 'var(--content-offset)',
         paddingRight: 'var(--content-offset)',

@@ -7,6 +7,7 @@ import { Film, GitFork, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import SloganText from './SloganText';
 import PlaygroundModal from './playgroundCards/PlaygroundModal';
+import Grainient from './Grainient';
 import { useRecordingCount } from '@/hooks/useRecordingCount';
 
 const TRUST_CHIPS = [
@@ -31,8 +32,42 @@ export default function Hero() {
 
   return (
     <>
-      <header className="relative flex-grow flex items-center justify-center text-center px-4 pt-16 pb-16 md:px-6 overflow-hidden">
-        <div aria-hidden className="hero-grid absolute inset-0 -z-10" />
+      <header className="relative z-0 flex-grow flex items-center justify-center text-center px-4 pt-16 pb-16 md:px-6 overflow-hidden">
+        <div
+          aria-hidden
+          className="absolute top-0 bottom-0 -z-20"
+          style={{ left: 'var(--content-offset)', right: 'var(--content-offset)' }}
+        >
+          <Grainient
+            color1="var(--grainient-1)"
+            color2="var(--grainient-2)"
+            color3="var(--grainient-3)"
+            timeSpeed={0.25}
+            colorBalance={0}
+            warpStrength={1}
+            warpFrequency={5}
+            warpSpeed={2}
+            warpAmplitude={50}
+            blendAngle={0}
+            blendSoftness={0.05}
+            rotationAmount={500}
+            noiseScale={2}
+            grainAmount={0.1}
+            grainScale={2}
+            grainAnimated={false}
+            contrast={1.5}
+            gamma={1}
+            saturation={1}
+            centerX={0}
+            centerY={0}
+            zoom={0.9}
+          />
+        </div>
+        <div
+          aria-hidden
+          className="hero-grid absolute top-0 bottom-0 -z-10"
+          style={{ left: 'var(--content-offset)', right: 'var(--content-offset)' }}
+        />
 
         <div className="mb-8 max-w-4xl flex flex-col items-center gap-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 backdrop-blur-sm px-4 py-1.5 text-xs sm:text-sm font-medium text-muted-foreground shadow-sm">

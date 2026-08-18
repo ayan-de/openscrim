@@ -69,6 +69,16 @@
   --stage-art-celeste-secondary: var(--stage-art-secondary);
   --stage-art-violet-highlight: var(--stage-art-highlight);
   --stage-art-grid-line: var(--stage-art-line);
+
+  /*
+   * Grainient (Hero WebGL backdrop) — three-stop palette. Tweak these
+   * tokens to retheme the entire Hero background; the component reads
+   * them via `var(--grainient-1)` etc. Stops orbit the brand green hue
+   * (~144°): a mint highlight, the brand primary, and a deep evergreen.
+   */
+  --grainient-1: oklch(0.8800 0.1500 144);
+  --grainient-2: oklch(0.5400 0.1800 144);
+  --grainient-3: oklch(0.3000 0.1100 156);
 }
 
 .dark {
@@ -134,6 +144,12 @@
   --stage-art-celeste-secondary: var(--stage-art-secondary);
   --stage-art-violet-highlight: var(--stage-art-highlight);
   --stage-art-grid-line: var(--stage-art-line);
+
+  /* Grainient — dark variant: a bit brighter on top, deeper on the
+   * bottom so the gradient glows against the dark hero backdrop. */
+  --grainient-1: oklch(0.8200 0.1800 144);
+  --grainient-2: oklch(0.6200 0.1800 144);
+  --grainient-3: oklch(0.2200 0.0700 156);
 }
 
 @theme inline {
