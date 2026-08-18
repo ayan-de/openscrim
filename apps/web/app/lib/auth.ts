@@ -22,7 +22,7 @@ const nextAuthResult = NextAuth({
           const name = (profile.name as string | undefined) ?? (profile.login as string | undefined) ?? '';
           const [firstName, ...rest] = name.split(' ');
           await UserModel.create({
-            email: profile.email ?? '',
+            email: profile.email ?? undefined,
             firstName: firstName ?? '',
             lastName: rest.join(' '),
             picture: profile.avatar_url as string | undefined,
