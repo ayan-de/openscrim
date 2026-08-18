@@ -104,8 +104,14 @@ export default function DashboardPage() {
   const totalPages = Math.ceil(total / 20);
 
   return (
-    <div className="flex-grow px-4 md:px-6 py-8 max-w-6xl mx-auto w-full">
-      <div className="relative rounded-2xl border border-border bg-card p-6 md:p-8 mb-8 overflow-hidden shadow-sm">
+    <div
+      className="flex-grow py-8 w-full"
+      style={{
+        paddingLeft: 'var(--content-offset)',
+        paddingRight: 'var(--content-offset)',
+      }}
+    >
+      <div className="relative rounded-sm border border-border bg-card p-6 md:p-8 mb-8 overflow-hidden shadow-sm">
         <div className="sidebar-stage-backdrop pointer-events-none absolute inset-x-0 top-0 z-0 h-28 overflow-hidden [--sidebar-stage-fade:var(--card)]">
           <BrandBackdrop />
         </div>
@@ -115,7 +121,8 @@ export default function DashboardPage() {
               Dashboard
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              {total} recording{total !== 1 ? 's' : ''} saved in your cloud library
+              {total} recording{total !== 1 ? 's' : ''} saved in your cloud
+              library
             </p>
           </div>
           <Link
