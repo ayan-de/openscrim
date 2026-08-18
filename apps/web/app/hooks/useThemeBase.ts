@@ -18,7 +18,9 @@ function readTheme(): ResolvedTheme {
  * from here instead of each re-implementing class/MutationObserver detection.
  */
 export function useThemeBase(): ResolvedTheme {
-  const [theme, setTheme] = useState<ResolvedTheme>(readTheme);
+  // Must match the SSR default ('light', since readTheme() sees no `document`
+  // there) — the real value is applied in the effect below, after mount.
+  const [theme, setTheme] = useState<ResolvedTheme>('light');
 
   useEffect(() => {
     setTheme(readTheme());
