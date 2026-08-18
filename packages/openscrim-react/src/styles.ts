@@ -196,6 +196,7 @@ export const OPENSCRIM_CSS = `
 .os-controls {
   position: absolute;
   left: 68px;
+  height: 30px;
   right: 16px;
   bottom: 16px;
   z-index: 1000;
