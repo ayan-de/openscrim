@@ -4,7 +4,7 @@ export interface User {
   firstName: string;
   lastName: string;
   picture?: string;
-  provider: 'google';
+  provider: 'github';
   providerId: string;
 }
 
@@ -18,7 +18,7 @@ export interface AuthResponse {
   };
 }
 
-export interface GoogleAuthUrl {
+export interface GitHubAuthUrl {
   status: number;
   code: string;
   message: string;

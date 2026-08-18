@@ -6,7 +6,7 @@ const UserSchema = new Schema(
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     picture: { type: String },
-    provider: { type: String, required: true, enum: ['google'] },
+    provider: { type: String, required: true, enum: ['github'] },
     providerId: { type: String, required: true, unique: true },
   },
   { timestamps: true }

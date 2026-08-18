@@ -1,30 +1,32 @@
 /* eslint-disable turbo/no-undeclared-env-vars */
 import NextAuth from 'next-auth';
-import Google from 'next-auth/providers/google';
+import GitHub from 'next-auth/providers/github';
 import { connectToDatabase } from './mongodb';
 import UserModel from './models/User';
 
 const nextAuthResult = NextAuth({
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
     }),
   ],
   secret: process.env.AUTH_SECRET,
   callbacks: {
     async signIn({ account, profile }) {
-      if (account?.provider === 'google' && profile?.sub) {
+      if (account?.provider === 'github' && profile?.id) {
         await connectToDatabase();
-        const providerId = profile.sub;
+        const providerId = String(profile.id);
         const existingUser = await UserModel.findOne({ providerId });
         if (!existingUser) {
+          const name = (profile.name as string | undefined) ?? (profile.login as string | undefined) ?? '';
+          const [firstName, ...rest] = name.split(' ');
           await UserModel.create({
             email: profile.email ?? '',
-            firstName: profile.given_name ?? '',
-            lastName: profile.family_name ?? '',
-            picture: profile.picture,
-            provider: 'google',
+            firstName: firstName ?? '',
+            lastName: rest.join(' '),
+            picture: profile.avatar_url as string | undefined,
+            provider: 'github',
             providerId,
           });
         }
@@ -32,9 +34,9 @@ const nextAuthResult = NextAuth({
       return true;
     },
     async jwt({ token, account, profile }) {
-      if (account?.provider === 'google' && profile?.sub) {
+      if (account?.provider === 'github' && profile?.id) {
         await connectToDatabase();
-        const user = await UserModel.findOne({ providerId: profile.sub });
+        const user = await UserModel.findOne({ providerId: String(profile.id) });
         if (user) {
           token._id = user._id.toString();
           token.firstName = user.firstName;
