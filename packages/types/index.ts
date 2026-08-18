@@ -4,7 +4,7 @@ export interface User {
   firstName: string;
   lastName: string;
   picture?: string;
-  provider: 'google';
+  provider: string;
   providerId: string;
   createdAt: string;
   updatedAt: string;

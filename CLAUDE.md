@@ -47,7 +47,7 @@ Path alias `@/*` → `apps/web/app/*`. Route groups:
 - `(studio)` — `/record` (recording studio) and `/view` (playback + fork UI)
 - `/r/[id]` — public share/player page
 - `api/` — the backend (migrated from a former NestJS app):
-  - `api/auth/[...nextauth]` — NextAuth v5 (beta) with Google provider. `lib/auth.ts` upserts users into MongoDB on sign-in and copies Mongo `_id` + profile fields into the JWT/session. Session augmentation types live in `app/types/next-auth.d.ts`.
+  - `api/auth/[...nextauth]` — NextAuth v5 (beta) handler with GitHub provider. `lib/auth.ts` upserts users into MongoDB on sign-in and copies Mongo `_id` + profile fields into the JWT/session. Session augmentation types live in `app/types/next-auth.d.ts`.
   - `api/recordings/...` — CRUD, `upload`, `[id]/download`, `[id]/events` (paginated) + `events/all`, `[id]/play`, `public`. Routes follow a consistent pattern: `auth()` guard → `connectToDatabase()` → call functions from `lib/recordingsService.ts` → JSON envelope `{ status, code, message, data }`.
 
 ### Persistence — two layers, don't confuse them
