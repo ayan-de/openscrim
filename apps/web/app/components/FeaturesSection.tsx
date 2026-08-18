@@ -1,55 +1,60 @@
-import {
-  Rewind,
-  GitFork,
-  FileArchive,
-  Share2,
-  Sparkles,
-  Code2,
-  type LucideIcon,
-} from 'lucide-react';
+import { Check, X } from 'lucide-react';
 
-interface Feature {
-  icon: LucideIcon;
-  title: string;
-  description: string;
+interface Row {
+  label: string;
+  scrim: string;
+  video: string;
+  scrimGood: boolean;
 }
 
-const FEATURES: Feature[] = [
+const ROWS: Row[] = [
   {
-    icon: Code2,
-    title: 'DOM-level capture',
-    description:
-      'Every keystroke, cursor move, selection, and edit is recorded as a structured, timestamped event — not a pixel video.',
+    label: '1 hr video, file size',
+    scrim: '~1 MB',
+    video: '1–2 GB depending on quality',
+    scrimGood: true,
   },
   {
-    icon: Rewind,
-    title: 'Scrub like a video',
-    description:
-      'Seek, pause, and change playback speed through a real coding session, frame by frame, just like a video player.',
+    label: 'On a 2G connection',
+    scrim: 'Same quality, every time',
+    video: 'Quality degrades to stay watchable',
+    scrimGood: true,
   },
   {
-    icon: GitFork,
-    title: 'Fork any moment',
-    description:
-      'Branch a playback at any timestamp into a live, editable Monaco session — practice from exactly where the recording left off.',
+    label: 'Loading & playback',
+    scrim: 'No buffering — events stream in instantly',
+    video: 'Buffering happens, especially on slow networks',
+    scrimGood: true,
   },
   {
-    icon: Sparkles,
-    title: 'Built for AI tutors',
-    description:
-      "Structured event data — not pixels — means AI tools can read, summarize, and coach on exactly what changed and why.",
+    label: 'Interaction',
+    scrim: 'Interactive — toggle between video and editor without leaving the page',
+    video: 'Watch only, 100× context switches to keep coding',
+    scrimGood: true,
   },
   {
-    icon: FileArchive,
-    title: 'Tiny, portable .scrim files',
-    description:
-      'Delta-encoded and gzip-compressed. Full sessions weigh kilobytes, not the megabytes a screen recording would take.',
+    label: 'Teacher vs. student',
+    scrim: 'Same codebase — what they saw is what you can edit',
+    video: 'Two codebases — yours and the one they recorded',
+    scrimGood: true,
   },
   {
-    icon: Share2,
-    title: 'Share & embed anywhere',
-    description:
-      'Publish a public link, or drop the React SDK’s ScrimPlayer straight into your own docs, blog, or app.',
+    label: 'Time spent',
+    scrim: 'Less time wasted on context switching',
+    video: 'More time wasted rewinding and retyping',
+    scrimGood: true,
+  },
+  {
+    label: 'Sharing one session',
+    scrim: 'Drop a link, done',
+    video: 'Upload, wait, share, hope the format works',
+    scrimGood: true,
+  },
+  {
+    label: 'Whole playlist (100 lessons)',
+    scrim: '~100 MB',
+    video: 'Up to ~20 GB depending on quality',
+    scrimGood: true,
   },
 ];
 
@@ -68,23 +73,53 @@ export default function FeaturesSection() {
           </p>
         </div>
 
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {FEATURES.map(({ icon: Icon, title, description }) => (
-            <div
-              key={title}
-              className="group relative rounded-xl border border-border bg-card/60 backdrop-blur-sm p-6 transition-all duration-300 hover:border-primary/50 hover:bg-card"
-            >
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Icon className="h-5 w-5" />
+        <div className="w-full max-w-5xl mx-auto">
+          <div className="rounded-xl border border-border bg-card/60 backdrop-blur-sm overflow-hidden">
+            {/* Header row */}
+            <div className="grid grid-cols-[1.1fr_1.4fr_1.4fr] sm:grid-cols-[1fr_1.3fr_1.3fr] items-center bg-muted/40 border-b border-border">
+              <div className="px-4 sm:px-6 py-4 text-xs sm:text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                What you care about
               </div>
-              <h3 className="text-base font-semibold text-card-foreground mb-2">
-                {title}
-              </h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {description}
-              </p>
+              <div className="px-4 sm:px-6 py-4 text-sm sm:text-base font-semibold text-primary flex items-center gap-2">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary">
+                  <Check className="h-3 w-3" />
+                </span>
+                OpenScrim
+              </div>
+              <div className="px-4 sm:px-6 py-4 text-sm sm:text-base font-semibold text-muted-foreground flex items-center gap-2">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  <X className="h-3 w-3" />
+                </span>
+                Screen recording
+              </div>
             </div>
-          ))}
+
+            {/* Body rows */}
+            {ROWS.map((row, i) => (
+              <div
+                key={row.label}
+                className={`grid grid-cols-[1.1fr_1.4fr_1.4fr] sm:grid-cols-[1fr_1.3fr_1.3fr] items-center ${
+                  i !== ROWS.length - 1 ? 'border-b border-border/60' : ''
+                } hover:bg-muted/20 transition-colors`}
+              >
+                <div className="px-4 sm:px-6 py-4 text-xs sm:text-sm font-medium text-foreground">
+                  {row.label}
+                </div>
+                <div className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-foreground">
+                  <span className="inline-flex items-start gap-2">
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span>{row.scrim}</span>
+                  </span>
+                </div>
+                <div className="px-4 sm:px-6 py-4 text-xs sm:text-sm text-muted-foreground">
+                  <span className="inline-flex items-start gap-2">
+                    <X className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                    <span>{row.video}</span>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
