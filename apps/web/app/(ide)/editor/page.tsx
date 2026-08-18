@@ -397,25 +397,6 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
           </button>
           <div className="w-px h-4 bg-border mx-1"></div>
           <button
-            onClick={toggleSidebar}
-            className="flex items-center justify-center w-7 h-7 rounded hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-colors cursor-pointer"
-            title="Toggle Explorer"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <line x1="9" y1="3" x2="9" y2="21" />
-            </svg>
-          </button>
-          <button
             onClick={toggleTerminal}
             className={`flex items-center justify-center w-7 h-7 rounded hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer ${
               isTerminalOpen
@@ -478,8 +459,28 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
           <div className="relative w-64 text-sidebar-foreground h-full overflow-hidden bg-sidebar">
             <SidebarBrandBackdrop />
             <div className="relative z-20 flex h-full min-h-0 flex-col">
-              <div className="flex items-center h-[38px] px-4 select-none shrink-0">
+              <div className="flex items-center justify-between h-[38px] px-4 select-none shrink-0">
                 <BrandMark />
+                <button
+                  onClick={toggleSidebar}
+                  className="flex items-center justify-center w-7 h-7 rounded text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
+                  title="Close Explorer"
+                  aria-label="Close Explorer"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
               </div>
               <div className="relative z-20 min-h-0 flex-1 overflow-y-auto overflow-x-clip">
               {sideMenuSelectedTab === 'explorer' && (
@@ -730,6 +731,31 @@ function PlaygroundEditor({ template }: { template: PlaygroundTemplate }) {
             </div>
           </div>
         </div>
+
+        {/* Floating Explorer toggle — only when the sidebar is closed.
+            Docks to the top-left of the IDE area (just below the topbar). */}
+        {!isSidebarOpen && (
+          <button
+            onClick={toggleSidebar}
+            className="absolute top-3 left-3 z-30 flex items-center justify-center w-9 h-9 rounded-md bg-card text-card-foreground border border-border shadow-md hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+            title="Open Explorer"
+            aria-label="Open Explorer"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="9" y1="3" x2="9" y2="21" />
+            </svg>
+          </button>
+        )}
 
         <FloatingPreviewWindow
           store={store}
