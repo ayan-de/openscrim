@@ -47,6 +47,11 @@ const CloseIcon = () => (
     <path d="M6 6l12 12M18 6L6 18" />
   </svg>
 );
+const RestartIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
+  </svg>
+);
 
 interface CursorPos {
   lineNumber: number;
@@ -480,14 +485,20 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
     }
   };
 
+  const isFinished = !isPlaying && position.progress >= 1;
+
   const handleTogglePlay = () => {
     if (forkMode) return returnToPlayback();
     if (isPlaying) {
       pause();
     } else {
+      // If playback ran to completion, restart from the beginning instead
+      // of trying to resume past the end.
+      const restartTime = isFinished ? 0 : position.currentTime;
       // play() re-seeks to the current position internally (to restore
       // canonical content over any paused-edit), which also emits a reset.
-      syncActiveFileForTime(position.currentTime);
+      syncActiveFileForTime(restartTime);
+      if (isFinished) player.getEngine().seek(0);
       play();
     }
   };
@@ -621,10 +632,18 @@ export function ScrimPlayer(props: ScrimPlayerProps) {
           type="button"
           className="os-play-float"
           onClick={handleTogglePlay}
-          aria-label={forkMode ? 'Return to playback' : isPlaying ? 'Pause' : 'Play'}
-          title={forkMode ? 'Return to playback' : undefined}
+          aria-label={forkMode ? 'Return to playback' : isPlaying ? 'Pause' : isFinished ? 'Restart' : 'Play'}
+          title={forkMode ? 'Return to playback' : isFinished ? 'Restart' : undefined}
         >
-          {isPlaying && !forkMode ? <PauseIcon /> : <PlayIcon />}
+          {forkMode ? (
+            <PlayIcon />
+          ) : isPlaying ? (
+            <PauseIcon />
+          ) : isFinished ? (
+            <RestartIcon />
+          ) : (
+            <PlayIcon />
+          )}
         </button>
       )}
 

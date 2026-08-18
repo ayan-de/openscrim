@@ -334,6 +334,7 @@ export class PlaybackEngine {
         return;
       } else {
         this.pause();
+        this.emit('positionUpdate', { ...this.position });
         return;
       }
     }
